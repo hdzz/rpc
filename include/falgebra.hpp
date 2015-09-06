@@ -26,7 +26,7 @@ namespace fnk
         return fnk::eval
             (alg, 
              fnk::functor<F<fnk::fix<F>>>::fmap
-                ([=](auto&& o_) { return cata<A,F> (alg, o_); }, fnk::unfx (std::forward<fnk::fix<F>>(o))));
+                ([=](auto&& o_) { return fnk::eval (cata<A,F>, alg, o_); }, fnk::unfx (std::forward<fnk::fix<F>>(o))));
     }
     
     template <typename A, template <typename> class F,
@@ -36,7 +36,7 @@ namespace fnk
         return fnk::eval
             (alg, 
              fnk::functor<F<fnk::fix<F>>>::fmap
-                ([=](auto&& o_) { return cata<A,F> (alg, o_); }, fnk::unfx (o)));
+                ([=](auto&& o_) { return fnk::eval (cata<A,F>, alg, o_); }, fnk::unfx (o)));
     }
 } // namespace fnk
 
