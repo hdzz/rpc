@@ -22,7 +22,7 @@
 #include "type_support/container_traits.hpp"
 #include "utility/type_utils.hpp"
 
-namespace funk
+namespace fnk
 {
     template <typename T>
     struct monoid
@@ -41,8 +41,8 @@ namespace funk
 
     template <class C,
         typename = std::enable_if_t
-            <funk::monoid
-                <typename funk::type_support::container_traits<C>::value_type>::is_monoid_instance::value>>
+            <fnk::monoid
+                <typename fnk::type_support::container_traits<C>::value_type>::is_monoid_instance::value>>
     struct default_monoid_container : public default_semigroup_container<C>
     {
         static constexpr decltype(auto) unity (void) { return C{}; }
@@ -107,7 +107,7 @@ DEFAULT_CONTAINERS();
 
 #undef MONOID_INSTANCE_CONTAINER
 #undef DEFAULT_CONTAINERS
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef MONOID_HPP
 

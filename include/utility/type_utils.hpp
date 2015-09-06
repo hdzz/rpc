@@ -12,7 +12,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace funk
+namespace fnk
 {
 namespace utility
 {
@@ -86,7 +86,7 @@ namespace utility
     template <typename E>
     struct is_well_formed : public detail::is_well_formed<E> {};
 } // namespace utility
-} // naemspace funk
+} // naemspace fnk
 
 #endif // ifndef TYPE_UTILS_HPP
 

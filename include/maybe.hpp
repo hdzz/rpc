@@ -13,7 +13,7 @@
 #include <type_traits>
 #include <new>
 
-namespace funk
+namespace fnk
 {
     template <class T>
     struct maybe;
@@ -31,10 +31,10 @@ namespace funk
     struct is_maybe : std::false_type {};
 
     template <class T>
-    struct is_maybe<funk::maybe<T>> : std::true_type {};
+    struct is_maybe<fnk::maybe<T>> : std::true_type {};
 
     template <class T>
-    struct is_maybe<funk::nothing<T>> : std::true_type {};
+    struct is_maybe<fnk::nothing<T>> : std::true_type {};
 
     namespace detail
     {
@@ -201,7 +201,7 @@ namespace funk
     {
         template <class T>
         using maybe_t = std::conditional_t
-            <std::is_trivially_destructible<T>::value, funk::maybe_trivial<T>, funk::maybe_default<T>>;
+            <std::is_trivially_destructible<T>::value, fnk::maybe_trivial<T>, fnk::maybe_default<T>>;
     } // namesapce detail
 
     template <class T>
@@ -211,18 +211,18 @@ namespace funk
         // type support
         using value_type = T;
         template <class U>
-        using rebind = typename funk::maybe<U>; 
+        using rebind = typename fnk::maybe<U>; 
 
         // implementation
         constexpr maybe (void) noexcept : detail::maybe_t<T> () {};
-        constexpr maybe (funk::maybe<T> const& m) : detail::maybe_t<T> ()
+        constexpr maybe (fnk::maybe<T> const& m) : detail::maybe_t<T> ()
         {
             if (!m.is_nothing()) {
                 new (static_cast<void*> (detail::maybe_t<T>::addressof())) T(*m);
                 detail::maybe_t<T>::init = true;
             }
         }
-        constexpr maybe (funk::maybe<T> && m) noexcept (std::is_nothrow_move_constructible<T>::value) : detail::maybe_t<T> ()
+        constexpr maybe (fnk::maybe<T> && m) noexcept (std::is_nothrow_move_constructible<T>::value) : detail::maybe_t<T> ()
         {
             if (!m.is_nothing()) {
                 new (static_cast<void*> (detail::maybe_t<T>::addressof())) T(std::move(*m));
@@ -239,13 +239,13 @@ namespace funk
 
         ~maybe (void) = default;
 
-        constexpr decltype(auto) operator= (funk::nothing<T>) noexcept
+        constexpr decltype(auto) operator= (fnk::nothing<T>) noexcept
         {
             detail::maybe_t<T>::clear();
             return *this;
         }
 
-        constexpr decltype(auto) operator= (funk::maybe<T> const& m)
+        constexpr decltype(auto) operator= (fnk::maybe<T> const& m)
         {
             if      (detail::maybe_t<T>::init && !m.init)
                 detail::maybe_t<T>::clear ();
@@ -256,7 +256,7 @@ namespace funk
             return *this;
         }
 
-        constexpr decltype(auto) operator= (funk::maybe<T> && m)
+        constexpr decltype(auto) operator= (fnk::maybe<T> && m)
             noexcept (std::is_nothrow_move_assignable<T>::value && std::is_nothrow_move_constructible<T>::value)
         {
             if      (detail::maybe_t<T>::init && !m.init)
@@ -293,7 +293,7 @@ namespace funk
             detail::maybe_t<T>::set (il, std::forward<Args> (ia)...);
         }
 
-        void swap (funk::maybe<T> & o)
+        void swap (fnk::maybe<T> & o)
             noexcept (std::is_nothrow_move_assignable<T>::value && noexcept(swap(std::declval<T&> (), std::declval<T&> ())))
         {
             if      (detail::maybe_t<T>::init && !o.init) {
@@ -316,7 +316,7 @@ namespace funk
         template <class U>
         constexpr decltype(auto) just_or (U && u) &&
         {
-            return *this ? detail::move_constexpr (const_cast<funk::maybe<T>&> (*detail::maybe_t<T>::value()))
+            return *this ? detail::move_constexpr (const_cast<fnk::maybe<T>&> (*detail::maybe_t<T>::value()))
                          : static_cast<T> (detail::forward_constexpr(u));
         }
 
@@ -333,21 +333,21 @@ namespace funk
         T * tref;
     public:
         constexpr maybe (void) noexcept                     : tref (nullptr) {}
-        constexpr maybe (funk::nothing<T&> const) noexcept  : tref (nullptr) {}
+        constexpr maybe (fnk::nothing<T&> const) noexcept  : tref (nullptr) {}
         constexpr maybe (T & t) noexcept                    : tref (std::addressof(t)) {}
-        constexpr maybe (funk::maybe<T&> const& m) noexcept : tref (m.tref) {}
+        constexpr maybe (fnk::maybe<T&> const& m) noexcept : tref (m.tref) {}
         maybe (T&&) = delete;
         
         ~maybe (void) = default;
 
-        constexpr decltype(auto) operator= (funk::nothing<T&> const) noexcept
+        constexpr decltype(auto) operator= (fnk::nothing<T&> const) noexcept
         {
             tref = nullptr;
             return *this;
         }
 
         template <class T_,
-            typename = typename std::enable_if<std::is_same<typename std::decay<T_>::type, funk::maybe<T&>>::value>::type>
+            typename = typename std::enable_if<std::is_same<typename std::decay<T_>::type, fnk::maybe<T&>>::value>::type>
         constexpr decltype(auto) operator= (T_ && t) noexcept
         {
             tref = t.tref;
@@ -357,7 +357,7 @@ namespace funk
         void emplace (T & t) noexcept { tref = std::addressof (t); }
         void emplace (T&& t) = delete;
 
-        void swap (funk::maybe<T&> & o) noexcept
+        void swap (fnk::maybe<T&> & o) noexcept
         {
             std::swap (tref, o.tref);
         }
@@ -393,345 +393,345 @@ namespace funk
     template <class T>
     constexpr decltype(auto) make_maybe (T && t)
     {
-        return funk::maybe<std::decay_t<T>> (detail::forward_constexpr<T>(t));
+        return fnk::maybe<std::decay_t<T>> (detail::forward_constexpr<T>(t));
     }
 
     template <class T>
     constexpr decltype(auto) make_maybe (std::reference_wrapper<T> t)
     {
-        return funk::maybe<T&> (t.get());
+        return fnk::maybe<T&> (t.get());
     }
 
     template <class T>
-    void swap (funk::maybe<T> & x, funk::maybe<T> & y) noexcept (noexcept(x.swap(y)))
+    void swap (fnk::maybe<T> & x, fnk::maybe<T> & y) noexcept (noexcept(x.swap(y)))
     {
         x.swap (y);
     }
 
     template <class T>
-    constexpr bool operator== (funk::maybe<T> const& x, funk::maybe<T>const & y)
+    constexpr bool operator== (fnk::maybe<T> const& x, fnk::maybe<T>const & y)
     {
         return bool(x) != bool(y) ? false : bool(x) == false ? true : *x == *y;
     }
 
     template <class T>
-    constexpr bool operator!= (funk::maybe<T> const& x, funk::maybe<T> const& y)
+    constexpr bool operator!= (fnk::maybe<T> const& x, fnk::maybe<T> const& y)
     {
         return !(x == y);
     }
 
     template <class T>
-    constexpr bool operator< (const funk::maybe<T>& x, const funk::maybe<T>& y)
+    constexpr bool operator< (const fnk::maybe<T>& x, const fnk::maybe<T>& y)
     {
         return (!y) ? false : (!x) ? true : *x < *y;
     }
       
     template <class T>
-    constexpr bool operator> (const funk::maybe<T>& x, const funk::maybe<T>& y)
+    constexpr bool operator> (const fnk::maybe<T>& x, const fnk::maybe<T>& y)
     {
         return (y < x);
     }
 
     template <class T>
-    constexpr bool operator<= (const funk::maybe<T>& x, const funk::maybe<T>& y)
+    constexpr bool operator<= (const fnk::maybe<T>& x, const fnk::maybe<T>& y)
     {
         return !(y < x);
     }
 
     template <class T>
-    constexpr bool operator>= (const funk::maybe<T>& x, const funk::maybe<T>& y)
+    constexpr bool operator>= (const fnk::maybe<T>& x, const fnk::maybe<T>& y)
     {
         return !(x < y);
     }
 
     template <class T>
-    constexpr bool operator== (const funk::maybe<T>& x, funk::nothing<T>) noexcept
+    constexpr bool operator== (const fnk::maybe<T>& x, fnk::nothing<T>) noexcept
     {
         return (!x);
     }
 
     template <class T>
-    constexpr bool operator== (funk::nothing<T>, const funk::maybe<T>& x) noexcept
+    constexpr bool operator== (fnk::nothing<T>, const fnk::maybe<T>& x) noexcept
     {
         return (!x);
     }
 
     template <class T>
-    constexpr bool operator!= (const funk::maybe<T>& x, funk::nothing<T>) noexcept
+    constexpr bool operator!= (const fnk::maybe<T>& x, fnk::nothing<T>) noexcept
     {
         return bool(x);
     }
 
     template <class T>
-    constexpr bool operator!= (funk::nothing<T>, const funk::maybe<T>& x) noexcept
+    constexpr bool operator!= (fnk::nothing<T>, const fnk::maybe<T>& x) noexcept
     {
         return bool(x);
     }
 
     template <class T>
-    constexpr bool operator< (const funk::maybe<T>&, funk::nothing<T>) noexcept
+    constexpr bool operator< (const fnk::maybe<T>&, fnk::nothing<T>) noexcept
     {
         return false;
     }
 
     template <class T>
-    constexpr bool operator< (funk::nothing<T>, const funk::maybe<T>& x) noexcept
+    constexpr bool operator< (fnk::nothing<T>, const fnk::maybe<T>& x) noexcept
     {
         return bool(x);
     }
 
     template <class T>
-    constexpr bool operator<= (const funk::maybe<T>& x, funk::nothing<T>) noexcept
+    constexpr bool operator<= (const fnk::maybe<T>& x, fnk::nothing<T>) noexcept
     {
         return (!x);
     }
 
     template <class T>
-    constexpr bool operator<= (funk::nothing<T>, const funk::maybe<T>&) noexcept
+    constexpr bool operator<= (fnk::nothing<T>, const fnk::maybe<T>&) noexcept
     {
         return true;
     }
 
     template <class T>
-    constexpr bool operator> (const funk::maybe<T>& x, funk::nothing<T>) noexcept
+    constexpr bool operator> (const fnk::maybe<T>& x, fnk::nothing<T>) noexcept
     {
         return bool(x);
     }
 
     template <class T>
-    constexpr bool operator> (funk::nothing<T>, const funk::maybe<T>&) noexcept
+    constexpr bool operator> (fnk::nothing<T>, const fnk::maybe<T>&) noexcept
     {
         return false;
     }
 
     template <class T>
-    constexpr bool operator>= (const funk::maybe<T>&, funk::nothing<T>) noexcept
+    constexpr bool operator>= (const fnk::maybe<T>&, fnk::nothing<T>) noexcept
     {
         return true;
     }
 
     template <class T>
-    constexpr bool operator>= (funk::nothing<T>, const funk::maybe<T>& x) noexcept
+    constexpr bool operator>= (fnk::nothing<T>, const fnk::maybe<T>& x) noexcept
     {
         return (!x);
     }
 
     template <class T>
-    constexpr bool operator== (const funk::maybe<T>& x, T const& v)
+    constexpr bool operator== (const fnk::maybe<T>& x, T const& v)
     {
         return bool(x) ? *x == v : false;
     }
 
     template <class T>
-    constexpr bool operator== (T const& v, const funk::maybe<T>& x)
+    constexpr bool operator== (T const& v, const fnk::maybe<T>& x)
     {
         return bool(x) ? v == *x : false;
     }
 
     template <class T>
-    constexpr bool operator!= (const funk::maybe<T>& x, T const& v)
+    constexpr bool operator!= (const fnk::maybe<T>& x, T const& v)
     {
         return bool(x) ? *x != v : true;
     }
 
     template <class T>
-    constexpr bool operator!= (T const& v, const funk::maybe<T>& x)
+    constexpr bool operator!= (T const& v, const fnk::maybe<T>& x)
     {
         return bool(x) ? v != *x : true;
     }
 
     template <class T>
-    constexpr bool operator< (const funk::maybe<T>& x, T const& v)
+    constexpr bool operator< (const fnk::maybe<T>& x, T const& v)
     {
         return bool(x) ? *x < v : true;
     }
 
     template <class T>
-    constexpr bool operator> (T const& v, const funk::maybe<T>& x)
+    constexpr bool operator> (T const& v, const fnk::maybe<T>& x)
     {
         return bool(x) ? v > *x : true;
     }
 
     template <class T>
-    constexpr bool operator> (const funk::maybe<T>& x, T const& v)
+    constexpr bool operator> (const fnk::maybe<T>& x, T const& v)
     {
         return bool(x) ? *x > v : false;
     }
 
     template <class T>
-    constexpr bool operator< (T const& v, const funk::maybe<T>& x)
+    constexpr bool operator< (T const& v, const fnk::maybe<T>& x)
     {
         return bool(x) ? v < *x : false;
     }
 
     template <class T>
-    constexpr bool operator>= (const funk::maybe<T>& x, T const& v)
+    constexpr bool operator>= (const fnk::maybe<T>& x, T const& v)
     {
         return bool(x) ? *x >= v : false;
     }
 
     template <class T>
-    constexpr bool operator<= (T const& v, const funk::maybe<T>& x)
+    constexpr bool operator<= (T const& v, const fnk::maybe<T>& x)
     {
         return bool(x) ? v <= *x : false;
     }
 
     template <class T>
-    constexpr bool operator<= (const funk::maybe<T>& x, T const& v)
+    constexpr bool operator<= (const fnk::maybe<T>& x, T const& v)
     {
         return bool(x) ? *x <= v : true;
     }
 
     template <class T>
-    constexpr bool operator>= (T const& v, const funk::maybe<T>& x)
+    constexpr bool operator>= (T const& v, const fnk::maybe<T>& x)
     {
         return bool(x) ? v >= *x : true;
     }
 
     template <class T>
-    constexpr bool operator== (const funk::maybe<T&>& x, T const& v)
+    constexpr bool operator== (const fnk::maybe<T&>& x, T const& v)
     {
         return bool(x) ? *x == v : false;
     }
 
     template <class T>
-    constexpr bool operator== (T const& v, const funk::maybe<T&>& x)
+    constexpr bool operator== (T const& v, const fnk::maybe<T&>& x)
     {
         return bool(x) ? v == *x : false;
     }
 
     template <class T>
-    constexpr bool operator!= (const funk::maybe<T&>& x, T const& v)
+    constexpr bool operator!= (const fnk::maybe<T&>& x, T const& v)
     {
         return bool(x) ? *x != v : true;
     }
 
     template <class T>
-    constexpr bool operator!= (T const& v, const funk::maybe<T&>& x)
+    constexpr bool operator!= (T const& v, const fnk::maybe<T&>& x)
     {
         return bool(x) ? v != *x : true;
     }
 
     template <class T>
-    constexpr bool operator< (const funk::maybe<T&>& x, T const& v)
+    constexpr bool operator< (const fnk::maybe<T&>& x, T const& v)
     {
         return bool(x) ? *x < v : true;
     }
 
     template <class T>
-    constexpr bool operator> (T const& v, const funk::maybe<T&>& x)
+    constexpr bool operator> (T const& v, const fnk::maybe<T&>& x)
     {
         return bool(x) ? v > *x : true;
     }
 
     template <class T>
-    constexpr bool operator> (const funk::maybe<T&>& x, T const& v)
+    constexpr bool operator> (const fnk::maybe<T&>& x, T const& v)
     {
         return bool(x) ? *x > v : false;
     }
 
     template <class T>
-    constexpr bool operator< (T const& v, const funk::maybe<T&>& x)
+    constexpr bool operator< (T const& v, const fnk::maybe<T&>& x)
     {
         return bool(x) ? v < *x : false;
     }
 
     template <class T>
-    constexpr bool operator>= (const funk::maybe<T&>& x, T const& v)
+    constexpr bool operator>= (const fnk::maybe<T&>& x, T const& v)
     {
         return bool(x) ? *x >= v : false;
     }
 
     template <class T>
-    constexpr bool operator<= (T const& v, const funk::maybe<T&>& x)
+    constexpr bool operator<= (T const& v, const fnk::maybe<T&>& x)
     {
         return bool(x) ? v <= *x : false;
     }
 
     template <class T>
-    constexpr bool operator<= (const funk::maybe<T&>& x, T const& v)
+    constexpr bool operator<= (const fnk::maybe<T&>& x, T const& v)
     {
         return bool(x) ? *x <= v : true;
     }
 
     template <class T>
-    constexpr bool operator>= (T const& v, const funk::maybe<T&>& x)
+    constexpr bool operator>= (T const& v, const fnk::maybe<T&>& x)
     {
         return bool(x) ? v >= *x : true;
     }
 
     template <class T>
-    constexpr bool operator== (const funk::maybe<T const&>& x, T const& v)
+    constexpr bool operator== (const fnk::maybe<T const&>& x, T const& v)
     {
         return bool(x) ? *x == v : false;
     }
 
     template <class T>
-    constexpr bool operator== (T const& v, const funk::maybe<T const&>& x)
+    constexpr bool operator== (T const& v, const fnk::maybe<T const&>& x)
     {
         return bool(x) ? v == *x : false;
     }
 
     template <class T>
-    constexpr bool operator!= (const funk::maybe<T const&>& x, T const& v)
+    constexpr bool operator!= (const fnk::maybe<T const&>& x, T const& v)
     {
         return bool(x) ? *x != v : true;
     }
 
     template <class T>
-    constexpr bool operator!= (T const& v, const funk::maybe<T const&>& x)
+    constexpr bool operator!= (T const& v, const fnk::maybe<T const&>& x)
     {
         return bool(x) ? v != *x : true;
     }
 
     template <class T>
-    constexpr bool operator< (const funk::maybe<T const&>& x, T const& v)
+    constexpr bool operator< (const fnk::maybe<T const&>& x, T const& v)
     {
         return bool(x) ? *x < v : true;
     }
 
     template <class T>
-    constexpr bool operator> (T const& v, const funk::maybe<T const&>& x)
+    constexpr bool operator> (T const& v, const fnk::maybe<T const&>& x)
     {
         return bool(x) ? v > *x : true;
     }
 
     template <class T>
-    constexpr bool operator> (const funk::maybe<T const&>& x, T const& v)
+    constexpr bool operator> (const fnk::maybe<T const&>& x, T const& v)
     {
         return bool(x) ? *x > v : false;
     }
 
     template <class T>
-    constexpr bool operator< (T const& v, const funk::maybe<T const&>& x)
+    constexpr bool operator< (T const& v, const fnk::maybe<T const&>& x)
     {
         return bool(x) ? v < *x : false;
     }
 
     template <class T>
-    constexpr bool operator>= (const funk::maybe<T const&>& x, T const& v)
+    constexpr bool operator>= (const fnk::maybe<T const&>& x, T const& v)
     {
         return bool(x) ? *x >= v : false;
     }
 
     template <class T>
-    constexpr bool operator<= (T const& v, const funk::maybe<T const&>& x)
+    constexpr bool operator<= (T const& v, const fnk::maybe<T const&>& x)
     {
         return bool(x) ? v <= *x : false;
     }
 
     template <class T>
-    constexpr bool operator<= (const funk::maybe<T const&>& x, T const& v)
+    constexpr bool operator<= (const fnk::maybe<T const&>& x, T const& v)
     {
         return bool(x) ? *x <= v : true;
     }
 
     template <class T>
-    constexpr bool operator>= (T const& v, const funk::maybe<T const&>& x)
+    constexpr bool operator>= (T const& v, const fnk::maybe<T const&>& x)
     {
         return bool(x) ? v >= *x : true;
     }
-} // namespace funk
+} // namespace fnk
 
 #endif // ifdef MAYBE_HPP
 

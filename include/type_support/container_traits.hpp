@@ -19,7 +19,7 @@
 
 #include "utility/type_utils.hpp"
 
-namespace funk
+namespace fnk
 {
 namespace type_support
 {
@@ -309,21 +309,21 @@ namespace type_support
         template <typename S_, typename = std::enable_if_t<std::is_convertible<S_, S>::value>>
         static inline constexpr decltype(auto) size (S_ && s) noexcept
         {
-            using U = funk::utility::rebind_argument_t<S_, S>;
+            using U = fnk::utility::rebind_argument_t<S_, S>;
             return std::forward<U>(s).size();
         }
         
         template <typename T_, typename = std::enable_if_t<std::is_convertible<T_,T>::value>>
         static inline constexpr void insert (S & s, T_ && t)
         {
-            using U = funk::utility::rebind_argument_t<T_, T>;
+            using U = fnk::utility::rebind_argument_t<T_, T>;
             s.push_back (std::forward<U>(t));
         }
 
         template <typename S_, typename = std::enable_if_t<std::is_convertible<S_, S>::value>>
         static inline constexpr void concat (S & l, S_ && r)
         {
-            using U = funk::utility::rebind_argument_t<S_, S>;
+            using U = fnk::utility::rebind_argument_t<S_, S>;
             l.append (std::forward<U>(r));
         }
         
@@ -344,7 +344,7 @@ namespace type_support
     template <typename T, template <typename> class K, typename Alloc>
     struct container_traits<std::basic_string<T,K<T>,Alloc> &&> : container_traits<std::basic_string<T,K<T>,Alloc>> {};
 } // namespace type_support
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef container_TRAITS
 

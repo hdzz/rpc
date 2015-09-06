@@ -21,7 +21,7 @@
 #include "type_support/container_traits.hpp"
 #include "utility/type_utils.hpp"
 
-namespace funk
+namespace fnk
 {
     //
     // foldlable (Foldable)
@@ -38,45 +38,45 @@ namespace funk
     template <class T>
     inline constexpr decltype(auto) fold (T && t)
     {
-        return funk::foldable<T>::fold (std::forward<T>(t));
+        return fnk::foldable<T>::fold (std::forward<T>(t));
     }
 
     template <class F, class B, class T>
     inline constexpr decltype(auto) foldl (F && f, B && b, T && t)
     {
-        return funk::foldable<T>::foldl (f, std::forward<B>(b), std::forward<T>(t));
+        return fnk::foldable<T>::foldl (f, std::forward<B>(b), std::forward<T>(t));
     }
 
     template <class C>
     struct default_foldable
     {
-        using value_type = typename funk::type_support::container_traits<C>::value_type;
+        using value_type = typename fnk::type_support::container_traits<C>::value_type;
         
         template <class C_,
             typename = std::enable_if_t<std::is_convertible<C_,C>::value>,
             typename = std::enable_if_t
-                <funk::monoid<typename funk::type_support::container_traits<C_>::value_type>::is_monoid_instance::value>>
+                <fnk::monoid<typename fnk::type_support::container_traits<C_>::value_type>::is_monoid_instance::value>>
         static inline constexpr decltype(auto) fold (C_ && c)
         {
-            using U = funk::utility::rebind_argument_t<C_, C>;
-            using A = typename funk::type_support::container_traits<U>::value_type;
+            using U = fnk::utility::rebind_argument_t<C_, C>;
+            using A = typename fnk::type_support::container_traits<U>::value_type;
             
-            return funk::default_foldable<U>::template foldl<decltype(&funk::append<A>)>
-                (&funk::append<A>, funk::monoid<A>::unity(), std::forward<U>(c));
+            return fnk::default_foldable<U>::template foldl<decltype(&fnk::append<A>)>
+                (&fnk::append<A>, fnk::monoid<A>::unity(), std::forward<U>(c));
         }
 
         template <class F, class B, class C_,
             typename = std::enable_if_t<std::is_convertible<C_,C>::value>,
             typename = std::enable_if_t
-                <funk::monoid<typename funk::type_support::container_traits<C_>::value_type>::is_monoid_instance::value>>
+                <fnk::monoid<typename fnk::type_support::container_traits<C_>::value_type>::is_monoid_instance::value>>
         static constexpr decltype(auto) foldl (F && f, B && b, C_ && c)
         {
-            using U = funk::utility::rebind_argument_t<C_, C>;
-            using W = funk::utility::rebind_argument_t<std::remove_cv_t<B>, B>;
+            using U = fnk::utility::rebind_argument_t<C_, C>;
+            using W = fnk::utility::rebind_argument_t<std::remove_cv_t<B>, B>;
 
             auto b_ (std::forward<W>(b));
             for (auto&& e : std::forward<U>(c))
-                b_ = funk::eval (f, b_, e);
+                b_ = fnk::eval (f, b_, e);
             return b_;
         }
 
@@ -124,13 +124,13 @@ namespace funk
     template <class F, class B, class T>
     inline constexpr decltype(auto) foldr (F && f, B && b, T && t)
     {
-        return funk::rfoldable<T>::foldr (f, std::forward<B>(b), std::forward<T>(t));
+        return fnk::rfoldable<T>::foldr (f, std::forward<B>(b), std::forward<T>(t));
     }
 
     template <class C>
     struct default_rfoldable : public default_foldable<C>
     {
-        using value_type = typename funk::type_support::container_traits<C>::value_type;
+        using value_type = typename fnk::type_support::container_traits<C>::value_type;
 
         template <class F, class B>
         static constexpr decltype(auto) foldr (F && f, B && b, C const& c)
@@ -140,7 +140,7 @@ namespace funk
             { 
                 return [&,g](B const& b_tmp) { return g(f(vt_tmp, b_tmp)); };
             });
-            return funk::foldable<C>::foldl (invert, id, c) (std::forward<B>(b)); 
+            return fnk::foldable<C>::foldl (invert, id, c) (std::forward<B>(b)); 
         }
 
         struct is_rfoldable_instance : public std::true_type {};
@@ -170,7 +170,7 @@ namespace funk
 
 #undef DEFAULT_CONTAINERS
 #undef DEFAULT_RFOLDABLE_INSTANCE
-} // namespace funk
+} // namespace fnk
 
 #endif // FOLDABLE_HPP
 

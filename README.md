@@ -1,4 +1,4 @@
-## funktional (funk)
+## funktional
 
 funktional is a c++14 library for (mostly) pure functional programming.
 

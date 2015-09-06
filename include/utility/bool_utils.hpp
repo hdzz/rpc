@@ -11,7 +11,7 @@
 
 #include <type_traits>
 
-namespace funk
+namespace fnk
 {
 namespace utility
 {
@@ -30,7 +30,7 @@ namespace utility
         typename std::enable_if<std::is_convertible<Bs, bool>::value>::type...>
     static constexpr bool all_true (B && b1, Bs&& ... bs) { return std::forward<B>(b1) && all_true(std::forward<Bs>(bs)...); }
 } // namespace utility
-} // naemspace funk
+} // naemspace fnk
 
 #endif // ifndef BOOL_UTILS_HPP
 

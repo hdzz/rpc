@@ -12,19 +12,19 @@
 #include "type_support/function_traits.hpp"
 #include "utility/type_utils.hpp"
 
-namespace funk
+namespace fnk
 {
 namespace utility
 {
     template <class F, typename Tup, std::size_t ... S>
-    static inline constexpr decltype(auto) call (F &&, Tup &&, funk::utility::seq<S...>);
+    static inline constexpr decltype(auto) call (F &&, Tup &&, fnk::utility::seq<S...>);
 
     template <class F, typename Tup, std::size_t ... S>
-    static inline constexpr decltype(auto) bind (F &&, Tup &&, funk::utility::seq<S...>);
+    static inline constexpr decltype(auto) bind (F &&, Tup &&, fnk::utility::seq<S...>);
 
     template <template <typename ...> class FTup, template <typename ...> class ATup,
         class ... Fs, typename ... As, std::size_t ... S>
-    static inline constexpr decltype(auto) eval_tuple (FTup<Fs...> &&, ATup<As...> &&, funk::utility::seq<S...>);
+    static inline constexpr decltype(auto) eval_tuple (FTup<Fs...> &&, ATup<As...> &&, fnk::utility::seq<S...>);
 
     template <std::size_t I>
     struct tuple_helper
@@ -147,9 +147,9 @@ namespace utility
     };
 
     template <class F, typename Tup, std::size_t ... S>
-    static inline constexpr decltype(auto) call (F && f, Tup && argt, funk::utility::seq<S...>)
+    static inline constexpr decltype(auto) call (F && f, Tup && argt, fnk::utility::seq<S...>)
     {
-        using ftraits = typename funk::type_support::function_traits<F>;
+        using ftraits = typename fnk::type_support::function_traits<F>;
         using tsize = std::tuple_size<typename std::decay_t<Tup>>;
         static_assert (ftraits::arity == tsize::value, "arity of function does not agree with parameter tuple length");
 
@@ -157,9 +157,9 @@ namespace utility
     }
 
     template <class F, typename Tup, std::size_t ... S>
-    static inline constexpr decltype(auto) bind (F && f, Tup && t, funk::utility::seq<S...>)
+    static inline constexpr decltype(auto) bind (F && f, Tup && t, fnk::utility::seq<S...>)
     {
-        using ftraits = typename funk::type_support::function_traits<F>;
+        using ftraits = typename fnk::type_support::function_traits<F>;
         using tsize = std::tuple_size<typename std::decay_t<Tup>>;
         static_assert (ftraits::arity == tsize::value, "arity of function does not agree with parameter tuple length");
 
@@ -168,7 +168,7 @@ namespace utility
 
     template <template <typename ...> class FTup, template <typename ...> class ATup,
         class ... Fs, typename ... As, std::size_t ... S>
-    static inline constexpr decltype(auto) eval_tuple (FTup<Fs...> && fs, ATup<As...> && as, funk::utility::seq<S...>)
+    static inline constexpr decltype(auto) eval_tuple (FTup<Fs...> && fs, ATup<As...> && as, fnk::utility::seq<S...>)
     {
         using ftsize = std::tuple_size<FTup<Fs...>>;
         using atsize = std::tuple_size<ATup<As...>>;
@@ -176,10 +176,10 @@ namespace utility
                 "cannot component-wise apply function tuple to argument tuple of different length");
 
         return std::make_tuple
-            (funk::utility::call
+            (fnk::utility::call
                 (std::get<S>(fs),
                  std::get<S>(as), 
-                 typename funk::utility::seq_gen<
+                 typename fnk::utility::seq_gen<
                     std::tuple_size<typename std::tuple_element_t<S, typename std::decay_t<decltype(as)>>>::value>::type())...);
     }
 
@@ -219,7 +219,7 @@ namespace utility
         tuple_helper<std::tuple_size<decltype(t)>::value-1>::for_each_index (t, f); 
     }
 } // namespace utility
-} // naemspace funk
+} // naemspace fnk
 
 #endif // ifndef TUPLE_UTILS_HPP
 

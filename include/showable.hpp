@@ -13,7 +13,7 @@
 #include "type_support/container_traits.hpp"
 #include "utility/bool_utils.hpp"
 
-namespace funk
+namespace fnk
 {
     template <typename T>
     struct showable
@@ -49,7 +49,7 @@ namespace funk
     {
          
     };
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef SHOWABLE_HPP
 

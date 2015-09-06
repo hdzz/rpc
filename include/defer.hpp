@@ -18,7 +18,7 @@
 #include "eval.hpp"
 #include "type_support/function_traits.hpp"
 
-namespace funk
+namespace fnk
 {
     //
     // Non-Tuple Versions
@@ -28,13 +28,13 @@ namespace funk
         typename = std::enable_if_t<not std::is_member_object_pointer<F>::value>>   // types are correctly deduced
     inline constexpr decltype(auto) defer (F && f, Args&& ... args)                 // (prevents greedy template instantiation)
     {
-        using ftraits = typename funk::type_support::function_traits<F>;
+        using ftraits = typename fnk::type_support::function_traits<F>;
         static_assert (ftraits::arity == sizeof...(args), "arity of function disagrees with parameter list length");
 
         return
             [=, args = std::make_tuple(std::forward<Args>(args)...)] (void) 
             {
-                return funk::eval_tuple (f, std::move(args));
+                return fnk::eval_tuple (f, std::move(args));
             };
     }
 
@@ -42,52 +42,52 @@ namespace funk
     template <class R, class C, typename ... Args>
     inline constexpr decltype(auto) defer (R(C::*f)() const, C const& c, Args&& ... args)
     {
-        using ftraits = typename funk::type_support::function_traits<decltype(f)>;
+        using ftraits = typename fnk::type_support::function_traits<decltype(f)>;
         static_assert (ftraits::arity == sizeof...(args), "arity of function disagrees with parameter list length");
 
         return
             [=, args = std::make_tuple(std::forward<Args>(args)...)] (void)
             {
-                return funk::eval_tuple (c.*f, std::move(args));
+                return fnk::eval_tuple (c.*f, std::move(args));
             };
     }
 
     template <class R, class C, typename ... Args>
     inline constexpr decltype(auto) defer (R(C::*f)() const, C & c, Args&& ... args)
     {
-        using ftraits = typename funk::type_support::function_traits<decltype(f)>;
+        using ftraits = typename fnk::type_support::function_traits<decltype(f)>;
         static_assert (ftraits::arity == sizeof...(args), "arity of function disagrees with parameter list length");
 
         return
             [=, args = std::make_tuple(std::forward<Args>(args)...)] (void)
             {
-                return funk::eval_tuple (c.*f, std::move(args));
+                return fnk::eval_tuple (c.*f, std::move(args));
             };
     }
 
     template <class R, class C, typename ... Args>
     inline constexpr decltype(auto) defer (R(C::*f)(), C const& c, Args&& ... args)
     {
-        using ftraits = typename funk::type_support::function_traits<decltype(f)>;
+        using ftraits = typename fnk::type_support::function_traits<decltype(f)>;
         static_assert (ftraits::arity == sizeof...(args), "arity of function disagrees with parameter list length");
 
         return
             [=, args = std::make_tuple(std::forward<Args>(args)...)] (void)
             {
-                return funk::eval_tuple (c.*f, std::move(args));
+                return fnk::eval_tuple (c.*f, std::move(args));
             };
     }
 
     template <class R, class C, typename ... Args>
     inline constexpr decltype(auto) defer (R(C::*f)(), C & c, Args&& ... args)
     {
-        using ftraits = typename funk::type_support::function_traits<decltype(f)>;
+        using ftraits = typename fnk::type_support::function_traits<decltype(f)>;
         static_assert (ftraits::arity == sizeof...(args), "arity of function disagrees with parameter list length");
 
         return
             [=, args = std::make_tuple(std::forward<Args>(args)...)] (void)
             {
-                return funk::eval_tuple (c.*f, std::move(args));
+                return fnk::eval_tuple (c.*f, std::move(args));
             };
     }
 
@@ -95,13 +95,13 @@ namespace funk
     template <class R, class C>
     inline constexpr decltype(auto) defer (R(C::*m), C && c)
     {
-        return [r = funk::eval (m, c)] (void) { return r; };
+        return [r = fnk::eval (m, c)] (void) { return r; };
     }
 
     template <class R, class C>
     inline constexpr decltype(auto) defer (R(C::*m), C & c)
     {
-        return [r = funk::eval (m, c)] (void) { return r; };
+        return [r = fnk::eval (m, c)] (void) { return r; };
     }
 
     // 
@@ -110,17 +110,17 @@ namespace funk
     template <class F, typename Tup>
     constexpr decltype(auto) defer_tuple (F && f, Tup && t)
     {
-        using ftraits = typename funk::type_support::function_traits<F>;
+        using ftraits = typename fnk::type_support::function_traits<F>;
         using tupsize = typename std::tuple_size<typename std::decay<Tup>::type>;
         static_assert (ftraits::arity == tupsize::value, "arity of function disagrees with parameter tuple length");
 
         return
             [=] (void) 
             {
-                return funk::eval_tuple (f, std::forward<Tup>(t));
+                return fnk::eval_tuple (f, std::forward<Tup>(t));
             };
     }
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef DEFER_HPP
 

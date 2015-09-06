@@ -17,16 +17,16 @@
 #include "type_support/container_traits.hpp"
 #include "utility/type_utils.hpp"
 
-namespace funk
+namespace fnk
 {
     template <class C,
-        typename = std::enable_if_t<funk::foldable<C>::is_foldable_instance::value>>
+        typename = std::enable_if_t<fnk::foldable<C>::is_foldable_instance::value>>
     inline constexpr decltype(auto) flatten (C && c)
     {
     }
-} // namesapce funk
+} // namesapce fnk
 
-auto r = funk::flatten (std::list<std::list<int>>{{1,2,3},{5,6,7}});
+auto r = fnk::flatten (std::list<std::list<int>>{{1,2,3},{5,6,7}});
 
 #endif // ifndef FLATTEN_HPP
 

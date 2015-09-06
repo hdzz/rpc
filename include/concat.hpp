@@ -16,19 +16,19 @@
 #include "foldable.hpp"
 #include "type_support/container_traits.hpp"
 
-namespace funk
+namespace fnk
 {
     template <class C,
-        typename = std::enable_if_t<funk::rfoldable<C>::is_rfoldable_instance::value>,
+        typename = std::enable_if_t<fnk::rfoldable<C>::is_rfoldable_instance::value>,
         typename = std::enable_if_t
-            <funk::monoid<typename funk::type_support::container_traits<C>::value_type>::is_monoid_instance::value>>
+            <fnk::monoid<typename fnk::type_support::container_traits<C>::value_type>::is_monoid_instance::value>>
     inline constexpr decltype(auto) concat (C const& c)
     {
-        using A = std::decay_t<typename funk::type_support::container_traits<C>::value_type>;
-        return funk::rfoldable<C>::template foldr
-            ([](auto&& l, auto&& r) { return funk::append<decltype(l),decltype(r)>(l, r); }, funk::monoid<A>::unity(), c); 
+        using A = std::decay_t<typename fnk::type_support::container_traits<C>::value_type>;
+        return fnk::rfoldable<C>::template foldr
+            ([](auto&& l, auto&& r) { return fnk::append<decltype(l),decltype(r)>(l, r); }, fnk::monoid<A>::unity(), c); 
     }
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef CONCAT_HPP
 

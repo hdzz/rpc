@@ -20,7 +20,7 @@
 #include "type_support/container_traits.hpp"
 #include "type_support/function_traits.hpp"
 
-namespace funk
+namespace fnk
 {
     template <class T>
     struct filterable
@@ -33,26 +33,26 @@ namespace funk
     template <class F, class T>
     inline constexpr decltype(auto) filter (F && f, T && in)
     {
-        return funk::filterable<T>::filter (f, std::forward<T>(in));
+        return fnk::filterable<T>::filter (f, std::forward<T>(in));
     }
 
     template <class C,
-        typename = std::enable_if_t<funk::foldable<C>::is_foldable_instance::value>>
-    struct default_filterable : public funk::foldable<C>
+        typename = std::enable_if_t<fnk::foldable<C>::is_foldable_instance::value>>
+    struct default_filterable : public fnk::foldable<C>
     {
-        using value_type = typename funk::type_support::container_traits<C>::value_type;
+        using value_type = typename fnk::type_support::container_traits<C>::value_type;
 
         template <class P, class C_,
             typename = std::enable_if_t
-                <std::is_convertible<typename funk::type_support::function_traits<P>::return_type, bool>::value>,
+                <std::is_convertible<typename fnk::type_support::function_traits<P>::return_type, bool>::value>,
             typename = std::enable_if_t<std::is_convertible<C_,C>::value>>
         static constexpr decltype(auto) filter (P && pred, C_ && c)
         {
-            using OT = funk::utility::rebind_argument_t<C_, C>;
+            using OT = fnk::utility::rebind_argument_t<C_, C>;
             OT out;
             for (auto&& e : std::forward<OT>(c))
                if (pred (e))
-                  funk::type_support::container_traits<OT>::insert (out, e);
+                  fnk::type_support::container_traits<OT>::insert (out, e);
             return out; 
         }
 
@@ -86,7 +86,7 @@ namespace funk
 #undef DEFAULT_CONTAINERS
 #undef DEFAULT_FILTERABLE_INSTANCE
 
-} // namespace funk
+} // namespace fnk
 
 #endif // FILTERABLE_HPP
 

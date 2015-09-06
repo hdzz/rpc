@@ -11,7 +11,7 @@
 
 #include <functional>
 
-namespace funk
+namespace fnk
 {
 namespace type_support
 {
@@ -79,7 +79,7 @@ namespace type_support
     template <class F>
     struct function_traits<F&&> : public function_traits<F> {};
 } // namespace type_support
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef FUNCTION_TRAITS_HPP
 

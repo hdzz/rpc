@@ -16,7 +16,7 @@
 #include "eval.hpp"
 #include "type_support/function_traits.hpp"
 
-namespace funk
+namespace fnk
 {
     //
     // Composing 1-Ary functions
@@ -25,14 +25,14 @@ namespace funk
     template <class F, class G>
     inline constexpr decltype(auto) compose (F && f, G && g) 
     {
-        using FArg = typename funk::type_support::function_traits<F>::template argument<0>::type;
-        using GRet = typename funk::type_support::function_traits<G>::return_type;
+        using FArg = typename fnk::type_support::function_traits<F>::template argument<0>::type;
+        using GRet = typename fnk::type_support::function_traits<G>::return_type;
 
         static_assert (std::is_convertible<GRet, FArg>::value, "types are non-convertible.");
-        static_assert (funk::type_support::function_traits<F>::arity == 1, "attempt to compose non-unary function.");
-        static_assert (funk::type_support::function_traits<G>::arity == 1, "attempt to compose non-unary function.");
+        static_assert (fnk::type_support::function_traits<F>::arity == 1, "attempt to compose non-unary function.");
+        static_assert (fnk::type_support::function_traits<G>::arity == 1, "attempt to compose non-unary function.");
 
-        return [=](auto && a) { return funk::eval(f, funk::eval(g, a)); };
+        return [=](auto && a) { return fnk::eval(f, fnk::eval(g, a)); };
     }
 
     template <class F, class ... Gs>
@@ -54,37 +54,37 @@ namespace funk
     template <typename F, typename ... Gs>
     inline constexpr decltype(auto) composeN (F && f, Gs&& ... gs)
     {
-        using ftraits = typename funk::type_support::function_traits<F>;
+        using ftraits = typename fnk::type_support::function_traits<F>;
         static_assert (ftraits::arity == sizeof...(gs), "arity does not match length of composed functions");
 
         return [=](auto && ... as)
         {
             static_assert (sizeof...(gs) == sizeof...(as), "number of arguments does not match number of functions to apply");
-            return funk::eval_tuple
+            return fnk::eval_tuple
                 (f,
-                 funk::utility::eval_tuple
+                 fnk::utility::eval_tuple
                         (std::make_tuple(gs...),
                          std::make_tuple(std::forward(as)...),
-                         typename funk::utility::seq_gen<sizeof...(gs)>::type()));
+                         typename fnk::utility::seq_gen<sizeof...(gs)>::type()));
         };
     }
 
     template <typename F, typename ... Gs>
     inline constexpr decltype(auto) composeN (F && f, std::tuple<Gs...> && gs)
     {
-        using ftraits = typename funk::type_support::function_traits<F>;
+        using ftraits = typename fnk::type_support::function_traits<F>;
         using gtsize = std::tuple_size<decltype(gs)>;
         static_assert (ftraits::arity == gtsize::value, "arity does not match length of composed functions");
 
         return [=](auto && ... as)
         {
             static_assert (gtsize::value == sizeof...(as), "number of arguments does not match number of functions to apply");
-            return funk::eval_tuple
+            return fnk::eval_tuple
                 (f,
-                 funk::utility::eval_tuple
+                 fnk::utility::eval_tuple
                     (gs,
                      std::make_tuple(std::forward(as)...),
-                     typename funk::utility::seq_gen<gtsize::value>::type()));
+                     typename fnk::utility::seq_gen<gtsize::value>::type()));
         };
     }
 
@@ -93,7 +93,7 @@ namespace funk
     {
         return composeN (f, gs);
     }
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef COMPOSE_HPP
 

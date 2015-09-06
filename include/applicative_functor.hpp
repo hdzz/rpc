@@ -16,7 +16,7 @@
 #include "maybe.hpp"
 #include "type_support/function_traits.hpp"
 
-namespace funk
+namespace fnk
 {
     template <class T>
     struct applicative_functor;
@@ -31,12 +31,12 @@ namespace funk
     } // namespace detail
 
     template <class T,
-        typename = std::enable_if_t<funk::functor<T>::is_functor_instance::value>>
+        typename = std::enable_if_t<fnk::functor<T>::is_functor_instance::value>>
     struct default_applicative_functor
     {
         struct is_applicative_functor_instance : public std::true_type {};
     };
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef APPLICATIVE_FUNCTOR_HPP
 

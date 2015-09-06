@@ -21,7 +21,7 @@
 #include "type_support/container_traits.hpp"
 #include "utility/type_utils.hpp"
 
-namespace funk
+namespace fnk
 {
     template <typename T>
     struct semigroup
@@ -36,7 +36,7 @@ namespace funk
         template <typename T_, typename = std::enable_if_t<std::is_convertible<T_, T>::value>>
         static inline constexpr decltype(auto) append (T_ && l, T_ && r)
         {
-            using U = funk::utility::rebind_argument_t<T_,T>;
+            using U = fnk::utility::rebind_argument_t<T_,T>;
             return A::append (std::forward<U>(l), std::forward<U>(r));
         }
         
@@ -49,12 +49,12 @@ namespace funk
         template <typename T_, typename = std::enable_if_t<std::is_convertible<T_, T>::value>>
         static inline constexpr decltype(auto) append (T_ && l, T_ && r)
         {
-            using U = std::remove_cv_t<funk::utility::rebind_argument_t<T_,T>>;
-            using W = funk::utility::rebind_argument_t<T_,T>;
+            using U = std::remove_cv_t<fnk::utility::rebind_argument_t<T_,T>>;
+            using W = fnk::utility::rebind_argument_t<T_,T>;
 
             U out (std::forward<W>(l));
             for (auto&& e : std::forward<W>(r))
-                funk::type_support::container_traits<U>::insert (out, e);
+                fnk::type_support::container_traits<U>::insert (out, e);
             return out;
         }
         struct is_semigroup_instance : public std::true_type {}; 
@@ -68,7 +68,7 @@ namespace funk
             template <typename T_, typename = std::enable_if_t<std::is_convertible<T_, T>::value>>
             static inline constexpr decltype(auto) append (T_ && l, T_ && r)
             {
-                using U = funk::utility::rebind_argument_t<T_,T>;
+                using U = fnk::utility::rebind_argument_t<T_,T>;
                 return std::plus<T>() (std::forward<U>(l), std::forward<U>(r));
             }
         };
@@ -76,17 +76,17 @@ namespace funk
 
     template <typename T1, typename T2,
         typename = std::enable_if_t
-            <funk::semigroup<T1>::is_semigroup_instance::value && funk::semigroup<T2>::is_semigroup_instance::value>>
+            <fnk::semigroup<T1>::is_semigroup_instance::value && fnk::semigroup<T2>::is_semigroup_instance::value>>
     inline constexpr decltype(auto) append (T1 && l, T2 && r)
     {
-        using U = funk::utility::convert_between_t<T1, T2>;
-        return funk::semigroup<U>::append (std::forward<U>(l), std::forward<U>(r));
+        using U = fnk::utility::convert_between_t<T1, T2>;
+        return fnk::semigroup<U>::append (std::forward<U>(l), std::forward<U>(r));
     }
 
     template <typename T>
     inline constexpr decltype(auto) append (T && l, T && r)
     {
-        return funk::semigroup<T>::append (std::forward<T>(l), std::forward<T>(r));
+        return fnk::semigroup<T>::append (std::forward<T>(l), std::forward<T>(r));
     }
 
 #define DEFAULT_TYPES()\
@@ -147,7 +147,7 @@ DEFAULT_CONTAINERS();
 
 #undef SEMIGROUP_INSTANCE_CONTAINER
 #undef DEFAULT_CONTAINERS
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef SEMIGROUP_HPP
 

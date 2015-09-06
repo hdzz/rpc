@@ -26,7 +26,7 @@
 #include "type_support/function_traits.hpp"
 #include "utility/type_utils.hpp"
 
-namespace funk
+namespace fnk
 {
     template <class T>
     struct mappable
@@ -42,14 +42,14 @@ namespace funk
         template <class F, typename G,
             typename = std::enable_if_t
                 <std::is_convertible
-                    <typename funk::type_support::function_traits<F>::return_type, R>::value>,
-            typename = std::enable_if_t<funk::mappable<G>::is_mappable_instance::value>,
-            typename = std::enable_if_t<funk::utility::is_well_formed<G(Args...)>::value>>
+                    <typename fnk::type_support::function_traits<F>::return_type, R>::value>,
+            typename = std::enable_if_t<fnk::mappable<G>::is_mappable_instance::value>,
+            typename = std::enable_if_t<fnk::utility::is_well_formed<G(Args...)>::value>>
         static constexpr decltype(auto) map (F && f, G && g)
         {
             return [=] (Args ... args)
             {
-                return funk::eval (f, funk::eval(g, std::forward<Args>(args)...));
+                return fnk::eval (f, fnk::eval(g, std::forward<Args>(args)...));
             }; 
         }
 
@@ -74,21 +74,21 @@ namespace funk
     template <class C>
     struct default_mappable_container
     {
-        typedef typename funk::type_support::container_traits<C>::value_type value_type;
+        typedef typename fnk::type_support::container_traits<C>::value_type value_type;
 
         template <class F, class C_,
             typename = std::enable_if_t<std::is_convertible<C_, C>::value>,
             typename = std::enable_if_t
-                <funk::utility::is_well_formed<F(typename funk::type_support::container_traits<C_>::value_type)>::value>>
+                <fnk::utility::is_well_formed<F(typename fnk::type_support::container_traits<C_>::value_type)>::value>>
         static decltype(auto) map (F && f, C_ && c)
         {
-            using FR = typename funk::type_support::function_traits<F>::return_type;
-            using U = funk::utility::rebind_argument_t<C_, C>;
-            using OT = typename funk::type_support::container_traits<U>::template rebind<FR>;
+            using FR = typename fnk::type_support::function_traits<F>::return_type;
+            using U = fnk::utility::rebind_argument_t<C_, C>;
+            using OT = typename fnk::type_support::container_traits<U>::template rebind<FR>;
 
             OT out;
             for (auto&& e : std::forward<U>(c))
-                funk::type_support::container_traits<OT>::insert (out, funk::eval (f, e));
+                fnk::type_support::container_traits<OT>::insert (out, fnk::eval (f, e));
             return out;
         }
 
@@ -119,36 +119,36 @@ DEFAULT_MAPPABLE_CONTAINER_INSTANCE(std::vector);
 #undef DEFAULT_MAPPABLE_CONTAINER_INSTANCE
 
     template <class F, class Ct, class ... Cts,
-        typename = std::enable_if_t<funk::type_support::function_traits<F>::arity >= 2>>
+        typename = std::enable_if_t<fnk::type_support::function_traits<F>::arity >= 2>>
     decltype(auto) map (F && f, Ct && ct, Cts && ... cts)
     {
-        static_assert (funk::type_support::function_traits<F>::arity == 1 + sizeof...(cts),
+        static_assert (fnk::type_support::function_traits<F>::arity == 1 + sizeof...(cts),
                 "arity of function does not match number of provided containers"); 
         using TB = decltype
-            (funk::eval(f,
-                        std::declval<typename funk::type_support::container_traits<Ct>::value_type>(),
-                        std::declval<typename funk::type_support::container_traits<Cts>::value_type>()...));
-        using OT = std::remove_cv_t<typename funk::type_support::container_traits<Ct>::template rebind<TB>>;
+            (fnk::eval(f,
+                        std::declval<typename fnk::type_support::container_traits<Ct>::value_type>(),
+                        std::declval<typename fnk::type_support::container_traits<Cts>::value_type>()...));
+        using OT = std::remove_cv_t<typename fnk::type_support::container_traits<Ct>::template rebind<TB>>;
        
         OT out;
         auto const ends = std::make_tuple(ct.end(), (cts.end())...);
         for (auto&& its = std::make_tuple(ct.begin(), (cts.begin())...);
-             !funk::utility::tuple_any_equal(its, ends);
-             funk::utility::tuple_increment(its))
+             !fnk::utility::tuple_any_equal(its, ends);
+             fnk::utility::tuple_increment(its))
         {
-            funk::type_support::container_traits<OT>::insert
-                (out, funk::eval_tuple(f, funk::utility::tuple_dereference(its)));
+            fnk::type_support::container_traits<OT>::insert
+                (out, fnk::eval_tuple(f, fnk::utility::tuple_dereference(its)));
         }
         return out;
     }
 
     template <class F, class T,
-        typename = std::enable_if_t<funk::type_support::function_traits<F>::arity == 1>>
+        typename = std::enable_if_t<fnk::type_support::function_traits<F>::arity == 1>>
     inline constexpr decltype(auto) map (F && f, T && t)
     {
-        return funk::mappable<T>::map (f, std::forward<T>(t));
+        return fnk::mappable<T>::map (f, std::forward<T>(t));
     }
-} // namespace funk
+} // namespace fnk
 
 #endif // ifndef MAPPABLE_HPP
 
