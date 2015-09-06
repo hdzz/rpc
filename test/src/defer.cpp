@@ -15,8 +15,8 @@ void function (int const& x)
 
 int main (void)
 {
-    auto arg1 = 1;
-    auto arg2 = 2;
+    int arg1 = 1;
+    int arg2 = 2;
     auto deferred1 = funk::defer (function, arg1);
     std::cout << "just deferred 'function' with argument: " << arg1 << "." << std::endl;
     std::cout << "when called not deferred with argument: " << arg2 << "." << std::endl;
