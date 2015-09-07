@@ -6,8 +6,8 @@
 // LICENSE: Please see LICENSE.md
 //
 
-#ifndef FIX_HPP
-#define FIX_HPP
+#ifndef FIX_TYPE_HPP
+#define FIX_TYPE_HPP
 
 #include <type_traits>
 
@@ -47,5 +47,5 @@ namespace fnk
     }
 } // namespace fnk
 
-#endif // ifndef FIX_HPP
+#endif // ifndef FIX_TYPE_HPP
 

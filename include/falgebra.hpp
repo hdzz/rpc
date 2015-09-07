@@ -11,8 +11,8 @@
 
 #include <type_traits>
 
-#include "fix.hpp"
 #include "functor.hpp"
+#include "type_support/fix_type.hpp"
 
 namespace fnk
 {
