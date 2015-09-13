@@ -85,6 +85,54 @@ namespace utility
 
     template <typename E>
     struct is_well_formed : public detail::is_well_formed<E> {};
+
+    template <class T>
+    inline constexpr T&& forward_constexpr (std::remove_reference_t<T> const& t) noexcept { return static_cast<T&&> (t); }
+    
+    template <class T>
+    inline constexpr T&& forward_constexpr (std::remove_reference_t<T> & t) noexcept { return static_cast<T&&> (t); }
+
+    template <class T>
+    inline constexpr T&& forward_constexpr (std::remove_reference_t<T>&& t) noexcept { return static_cast<T&&> (t); }
+
+    template <class T>
+    inline constexpr std::remove_reference_t<T>&& move_constexpr (T && t) noexcept
+    { 
+        return static_cast<std::remove_reference_t<T>&&> (t);
+    }
+
+    //
+    // Index from type(s)
+    //
+    template <typename U, typename ... Ts>
+    struct type_position;
+
+    template <typename U, typename ... Ts>
+    struct type_position <U, U, Ts...> : public std::integral_constant<std::size_t, 0> {};
+
+    template <typename U, typename T, typename ... Ts>
+    struct type_position <U, T, Ts...> : public std::integral_constant<std::size_t, 1 + type_position<U, Ts...>::value> {};
+   
+    template <typename U>
+    struct type_position<U> { static_assert (sizeof(U) == 0, "type not found in list"); };
+
+    //
+    // Type from index
+    //
+    template <std::size_t I, typename T, typename ... Ts>
+    struct index_type;
+
+    template <std::size_t I, typename T, typename ... Ts>
+    struct index_type : std::conditional_t<I == 0, index_type<0,T,Ts...>, index_type<I-1, Ts...>> {};
+
+    template <typename T, typename ... Ts>
+    struct index_type<0, T, Ts...>
+    {
+        using type = T;
+    };
+
+    template <std::size_t I, typename T, typename ... Ts>
+    using index_type_t = typename index_type<I, T, Ts...>::type;
 } // namespace utility
 } // naemspace fnk
 

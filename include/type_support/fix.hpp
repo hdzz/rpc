@@ -6,12 +6,14 @@
 // LICENSE: Please see LICENSE.md
 //
 
-#ifndef FIX_TYPE_HPP
-#define FIX_TYPE_HPP
+#ifndef FIX_HPP
+#define FIX_HPP
 
 #include <type_traits>
 
 namespace fnk
+{
+namespace type_support
 {
     template <template <typename> class F>
     struct fix : F<fix<F>>
@@ -45,7 +47,8 @@ namespace fnk
     {
         return f;
     }
+} // namespace type_suppport
 } // namespace fnk
 
-#endif // ifndef FIX_TYPE_HPP
+#endif // ifndef FIX_HPP
 
