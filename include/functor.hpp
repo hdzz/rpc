@@ -12,7 +12,7 @@
 #include <type_traits>
 
 #include "mappable.hpp"
-#include "maybe.hpp"
+#include "type_support/maybe.hpp"
 #include "type_support/function_traits.hpp"
 
 namespace fnk
@@ -59,25 +59,25 @@ namespace fnk
                         <fnk::mappable<T>::is_mappable_instance::value, default_functor<T>, detail::not_functor<T>> {};
 
     template <class T>
-    struct functor<fnk::maybe<T>> 
+    struct functor<fnk::type_support::maybe<T>> 
     {
         template <class F>
         static constexpr decltype(auto) fmap (F && f)
         {
             using U = typename fnk::type_support::function_traits<F>::return_type;
-            return [=] (fnk::maybe<T> const& m)
+            return [=] (fnk::type_support::maybe<T> const& m)
             {
-                return static_cast<bool>(m) ? fnk::make_maybe (f(*m)) : fnk::maybe<U> {};
+                return static_cast<bool>(m) ? fnk::type_support::make_maybe (f(*m)) : fnk::type_support::maybe<U> {};
             };
         }
         template <class F>
-        static constexpr decltype(auto) fmap (F && f, fnk::functor<fnk::maybe<T>> const& m)
+        static constexpr decltype(auto) fmap (F && f, fnk::functor<fnk::type_support::maybe<T>> const& m)
         {
             using U = typename fnk::type_support::function_traits<F>::return_type;
             if (m)
-              return fnk::make_maybe (f(*m));
+              return fnk::type_support::make_maybe (f(*m));
             else
-              return fnk::maybe<U> {}; 
+              return fnk::type_support::maybe<U> {}; 
         }
 
         struct is_functor_instance : public std::true_type {};

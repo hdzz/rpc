@@ -22,7 +22,6 @@
 //
 
 #include <algorithm>
-#include <cassert>
 #include <memory>
 #include <type_traits>
 
@@ -75,7 +74,9 @@ namespace detail
     {
     public:
         adt (void) : tindex_(0) { static_assert (sizeof(T) == 0, "cannot default construct algebraic data type"); }
- 
+
+        adt (adt<T, Ts...> const&) = default;
+
         template <typename U,
             typename = std::enable_if_t<fnk::utility::any_true(std::is_same<U,T>::value, std::is_same<U,Ts>::value...)>>
         adt (U && u) : tindex_ (utility::type_position<U, T, Ts...>::value)
@@ -175,11 +176,40 @@ namespace detail
         {
             return tindex_;
         }
+
+        template <typename U>
+        using is_adt_type =
+            std::conditional_t<fnk::utility::any_true(std::is_same<U,T>::value, std::is_same<U,Ts>::value...), 
+                             std::true_type, 
+                             std::false_type>;
+
+        using ntypes = std::integral_constant<std::size_t, 1 + sizeof...(Ts)>;
+
+        template <std::size_t N> 
+        using type = std::tuple_element_t<N, std::tuple<T, Ts...>>;
     private:
         std::size_t const tindex_;
         detail::adt_internal_storage<T, Ts...> storage;
     };
-} // namespace type_support    
+
+    template <typename T>
+    struct is_algebraic : public std::false_type {};
+
+    template <typename T, typename ... Ts>
+    struct is_algebraic<adt<T, Ts...>> : public std::true_type {};
+    
+    template <typename T, typename ... Ts>
+    struct is_algebraic<adt<T, Ts...> const> : public std::true_type {};
+    
+    template <typename T, typename ... Ts>
+    struct is_algebraic<adt<T, Ts...> &> : public std::true_type {};
+    
+    template <typename T, typename ... Ts>
+    struct is_algebraic<adt<T, Ts...> const&> : public std::true_type {};
+    
+    template <typename T, typename ... Ts>
+    struct is_algebraic<adt<T, Ts...> &&> : public std::true_type {};
+} // namespace type_support 
 } // namespace fnk
 
 #endif // ifndef ALGEBRAIC_HPP

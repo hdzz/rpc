@@ -133,6 +133,16 @@ namespace utility
 
     template <std::size_t I, typename T, typename ... Ts>
     using index_type_t = typename index_type<I, T, Ts...>::type;
+
+    //
+    // Building parameter type packs
+    //
+    template <std::size_t Nt, typename Tup>
+    struct types
+    {
+        template <std::size_t N>
+        using type = std::remove_reference_t<decltype(std::get<N>(std::declval<Tup>()))>;
+    };
 } // namespace utility
 } // naemspace fnk
 

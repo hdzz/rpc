@@ -22,6 +22,7 @@
 
 #include "defer.hpp"
 #include "eval.hpp"
+#include "type_support/algebraic.hpp"
 #include "type_support/container_traits.hpp"
 #include "type_support/function_traits.hpp"
 #include "utility/type_utils.hpp"
@@ -91,7 +92,7 @@ namespace fnk
                 fnk::type_support::container_traits<OT>::insert (out, fnk::eval (f, e));
             return out;
         }
-
+        
         struct is_mappable_instance : public std::true_type {};
     };
 

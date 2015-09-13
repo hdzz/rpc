@@ -18,8 +18,6 @@ namespace type_support
     template <template <typename> class F>
     struct fix : F<fix<F>>
     {
-        explicit constexpr fix (F<fix<F>> f) : F<fix<F>> (f) {}
-        explicit constexpr fix (F<fix<F>> & f) : F<fix<F>> (f) {}
         explicit constexpr fix (F<fix<F>> const& f) : F<fix<F>> (f) {}
         explicit constexpr fix (F<fix<F>> && f) : F<fix<F>> (f) {}
     };

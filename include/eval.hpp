@@ -12,6 +12,7 @@
 #include <tuple>
 #include <type_traits>
 
+#include "type_support/algebraic.hpp"
 #include "type_support/function_traits.hpp"
 #include "utility/tuple_utils.hpp"
 
@@ -86,6 +87,20 @@ namespace fnk
         static_assert (ftraits::arity == tupsize::value, "arity of function disagrees with parameter tuple length");
 
         return fnk::utility::call (f, std::forward<Tup>(t), typename fnk::utility::seq_gen<tupsize::value>::type());
+    }
+
+    template <class F, typename ... Ts>
+    inline constexpr decltype(auto) eval_adt (F && f, fnk::type_support::adt<Ts...> const& a)
+    {
+        using ftraits = typename fnk::type_support::function_traits<F>;
+        static_assert (ftraits::arity == 1, "arity of function is not equal to 1");
+        
+        using U = typename ftraits::template argument<0>::type;
+        static_assert 
+            (fnk::type_support::adt<Ts...>::template is_adt_type<U>::value,
+             "function cannot be applied to algebraic data type");
+    
+        return eval (f, a.template value<U>()); 
     }
 } // namespace fnk
 
