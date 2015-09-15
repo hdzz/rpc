@@ -18,17 +18,11 @@
 namespace fnk
 {
     template <class T>
-    struct functor;
-    
-    namespace detail
+    struct functor
     {
-        template <class T>
-        struct not_functor
-        {
-            struct is_functor_instance : public std::false_type {};
-        };
-    } // namespace detail
-
+        struct is_functor_instance : public std::false_type {};   
+    };
+    
     template <class T,
         typename = std::enable_if_t<fnk::mappable<T>::is_mappable_instance::value>>
     struct default_functor 
@@ -55,10 +49,6 @@ namespace fnk
     };
 
     template <class T>
-    struct functor : std::conditional_t
-                        <fnk::mappable<T>::is_mappable_instance::value, default_functor<T>, detail::not_functor<T>> {};
-
-    template <class T>
     struct functor<fnk::type_support::maybe<T>> 
     {
         template <class F>
@@ -71,17 +61,25 @@ namespace fnk
             };
         }
         template <class F>
-        static constexpr decltype(auto) fmap (F && f, fnk::functor<fnk::type_support::maybe<T>> const& m)
+        static constexpr decltype(auto) fmap (F && f, fnk::type_support::maybe<T> const& m)
         {
             using U = typename fnk::type_support::function_traits<F>::return_type;
-            if (m)
-              return fnk::type_support::make_maybe (f(*m));
-            else
-              return fnk::type_support::maybe<U> {}; 
+            return static_cast<bool>(m) ? fnk::type_support::make_maybe (f(*m)) : fnk::type_support::maybe<U> {}; 
         }
-
         struct is_functor_instance : public std::true_type {};
     };
+
+    template <class T>
+    struct functor<fnk::type_support::maybe<T> const> : public functor<fnk::type_support::maybe<T>> {};
+    
+    template <class T>
+    struct functor<fnk::type_support::maybe<T> &> : public functor<fnk::type_support::maybe<T>> {};
+    
+    template <class T>
+    struct functor<fnk::type_support::maybe<T> const&> : public functor<fnk::type_support::maybe<T>> {};
+    
+    template <class T>
+    struct functor<fnk::type_support::maybe<T> &&> : public functor<fnk::type_support::maybe<T>> {};
 
     template <template <typename...> class C, typename ... Ts>
     struct functor<C<Ts...>> : public default_functor<C<Ts...>>
@@ -103,6 +101,18 @@ namespace fnk
             return fnk::map (f, c);
         }
     };
+
+    template <template <typename...> class C, typename ... Ts>
+    struct functor<C<Ts...> const> : public functor<C<Ts...>> {};
+
+    template <template <typename...> class C, typename ... Ts>
+    struct functor<C<Ts...> &> : public functor<C<Ts...>> {};
+
+    template <template <typename...> class C, typename ... Ts>
+    struct functor<C<Ts...> const&> : public functor<C<Ts...>> {};
+
+    template <template <typename...> class C, typename ... Ts>
+    struct functor<C<Ts...> &&> : public functor<C<Ts...>> {};
 } // namespace fnk
 
 #endif // ifndef FUNCTOR_HPP

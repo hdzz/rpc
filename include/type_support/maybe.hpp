@@ -305,7 +305,7 @@ namespace type_support
         template <class U>
         constexpr decltype(auto) just_or (U && u) &&
         {
-            return *this ? utility::move_constexpr (const_cast<maybe<T>&> (*detail::maybe_t<T>::value()))
+            return *this ? utility::move_constexpr (detail::maybe_t<T>::value())
                          : static_cast<T> (utility::forward_constexpr(u));
         }
 
@@ -314,6 +314,9 @@ namespace type_support
             return !this->is_nothing();
         }
     };
+
+    template <class T>
+    struct maybe<T const> : public maybe<T> {};
 
     template <class T>
     struct maybe<T&>
@@ -372,6 +375,9 @@ namespace type_support
             return *this ? **this : static_cast<typename std::decay<T>::type> (utility::forward_constexpr<T_> (t));
         }
     };
+
+    template <class T>
+    struct maybe<T const&> : public maybe<T&> {};
 
     template <class T>
     struct maybe<T&&>
