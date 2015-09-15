@@ -21,7 +21,10 @@ int main (void)
 {
     std::list<std::size_t const> li { 0, 1, 2, 3 };
     std::list<std::string const> ls { "nothing", "test", "string", "repeat" };
-    
+
+    //
+    // Two ways to perform the same operation
+    //
     for (auto const& e : fnk::map (&repeat_string_tup, fnk::zip (ls, li)))
         std::cout << e << std::endl;
 
