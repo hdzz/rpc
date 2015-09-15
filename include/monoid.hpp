@@ -49,6 +49,15 @@ namespace fnk
         struct is_monoid_instance : public std::true_type {};
     };
 
+    template <typename T>
+    decltype(auto) repeat (T && t, std::size_t const n)
+    {
+        auto u = fnk::monoid<T>::unity();
+        for (std::size_t i = 0; i < n; ++i)
+            u = fnk::monoid<T>::append (static_cast<T>(u), std::forward<T>(t));
+        return u;
+    }
+
 #define DEFAULT_TYPES()\
     MONOID_INSTANCE(bool)\
     MONOID_INSTANCE(char)\

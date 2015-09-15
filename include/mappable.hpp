@@ -78,17 +78,17 @@ namespace fnk
         typedef typename fnk::type_support::container_traits<C>::value_type value_type;
 
         template <class F, class C_,
-            typename = std::enable_if_t<std::is_convertible<C_, C>::value>,
-            typename = std::enable_if_t
-                <fnk::utility::is_well_formed<F(typename fnk::type_support::container_traits<C_>::value_type)>::value>>
+            typename = std::enable_if_t<std::is_convertible<C_, C>::value>>//,
+           // typename = std::enable_if_t
+           //     <fnk::utility::is_well_formed<F(typename fnk::type_support::container_traits<C_>::value_type)>::value>>
         static decltype(auto) map (F && f, C_ && c)
         {
-            using FR = typename fnk::type_support::function_traits<F>::return_type;
-            using U = fnk::utility::rebind_argument_t<C_, C>;
-            using OT = typename fnk::type_support::container_traits<U>::template rebind<FR>;
+            using FR = std::decay_t<typename fnk::type_support::function_traits<F>::return_type>;
+            using CT = fnk::utility::rebind_argument_t<C_, C>;
+            using OT = typename fnk::type_support::container_traits<CT>::template rebind<FR>;
 
-            OT out;
-            for (auto&& e : std::forward<U>(c))
+            OT out {};
+            for (auto& e : std::forward<CT>(c))
                 fnk::type_support::container_traits<OT>::insert (out, fnk::eval (f, e));
             return out;
         }
@@ -125,15 +125,13 @@ DEFAULT_MAPPABLE_CONTAINER_INSTANCE(std::vector);
     {
         static_assert (fnk::type_support::function_traits<F>::arity == 1 + sizeof...(cts),
                 "arity of function does not match number of provided containers"); 
-        using TB = decltype
-            (fnk::eval(f,
-                        std::declval<typename fnk::type_support::container_traits<Ct>::value_type>(),
-                        std::declval<typename fnk::type_support::container_traits<Cts>::value_type>()...));
-        using OT = std::remove_cv_t<typename fnk::type_support::container_traits<Ct>::template rebind<TB>>;
+        using RT = std::result_of_t<F(typename fnk::type_support::container_traits<Ct>::value_type,
+                                      typename fnk::type_support::container_traits<Cts>::value_type...)>;
+        using OT = typename fnk::type_support::container_traits<Ct>::template rebind<RT>;
        
         OT out;
         auto const ends = std::make_tuple(ct.end(), (cts.end())...);
-        for (auto&& its = std::make_tuple(ct.begin(), (cts.begin())...);
+        for (auto& its = std::make_tuple(ct.begin(), (cts.begin())...);
              !fnk::utility::tuple_any_equal(its, ends);
              fnk::utility::tuple_increment(its))
         {

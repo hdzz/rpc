@@ -9,6 +9,7 @@
 #ifndef TYPE_UTILS_HPP
 #define TYPE_UTILS_HPP
 
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -70,6 +71,24 @@ namespace utility
     template <class T>
     struct is_same<T,T> : std::true_type {};
 
+    template <typename T, template <typename ...> class Tmp>
+    struct is_specialization : std::false_type {};
+    
+    template <template <typename ...> class Tmp, typename ... Ts>
+    struct is_specialization<Tmp<Ts...>, Tmp> : std::true_type {};
+
+    template <template <typename ...> class Tmp, typename ... Ts>
+    struct is_specialization<Tmp<Ts...> const, Tmp> : std::true_type {};
+    
+    template <template <typename ...> class Tmp, typename ... Ts>
+    struct is_specialization<Tmp<Ts...> &, Tmp> : std::true_type {};
+    
+    template <template <typename ...> class Tmp, typename ... Ts>
+    struct is_specialization<Tmp<Ts...> const&, Tmp> : std::true_type {};
+    
+    template <template <typename ...> class Tmp, typename ... Ts>
+    struct is_specialization<Tmp<Ts...> &&, Tmp> : std::true_type {};
+    
     namespace detail
     {
         template <typename T>
@@ -119,20 +138,11 @@ namespace utility
     //
     // Type from index
     //
-    template <std::size_t I, typename T, typename ... Ts>
-    struct index_type;
+    template <std::size_t I, typename ... Ts>
+    using index_type = std::tuple_element<I, std::tuple<Ts...>>;
 
-    template <std::size_t I, typename T, typename ... Ts>
-    struct index_type : std::conditional_t<I == 0, index_type<0,T,Ts...>, index_type<I-1, Ts...>> {};
-
-    template <typename T, typename ... Ts>
-    struct index_type<0, T, Ts...>
-    {
-        using type = T;
-    };
-
-    template <std::size_t I, typename T, typename ... Ts>
-    using index_type_t = typename index_type<I, T, Ts...>::type;
+    template <std::size_t I, typename ... Ts>
+    using index_type_t = std::tuple_element_t<I, std::tuple<Ts...>>;
 
     //
     // Building parameter type packs
