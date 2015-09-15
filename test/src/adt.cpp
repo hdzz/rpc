@@ -32,9 +32,9 @@ int main (void)
         else
             inputs.push_back (data_t::emplace<std::string>(s));
     }
-
-    auto int_entry = [] (data_t const& e) { return 0 == e.tindex(); };   
-    auto str_entry = [] (data_t const& e) { return 1 == e.tindex(); }; 
+ 
+    auto int_entry = [] (data_t const& e) { return data_t::index<int>::value         == e.tindex(); };   
+    auto str_entry = [] (data_t const& e) { return data_t::index<std::string>::value == e.tindex(); }; 
 
     auto square = [] (data_t const& e) { return e.template value<int>() * e.template value<int>(); };
 

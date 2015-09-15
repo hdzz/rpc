@@ -79,7 +79,7 @@ namespace detail
 
         template <typename U,
             typename = std::enable_if_t<fnk::utility::any_true(std::is_same<U,T>::value, std::is_same<U,Ts>::value...)>>
-        adt (U && u) : tindex_ (utility::type_position<U, T, Ts...>::value)
+        adt (U && u) : tindex_ (utility::type_to_index<U, T, Ts...>::value)
         {
             *reinterpret_cast<U*> (storage.template addressof<U>()) = std::move (std::forward<U>(u));
         }
@@ -187,6 +187,9 @@ namespace detail
 
         template <std::size_t N> 
         using type = std::tuple_element_t<N, std::tuple<T, Ts...>>;
+
+        template <typename U>
+        using index = fnk::utility::type_to_index<U, T, Ts...>;
     private:
         std::size_t const tindex_;
         detail::adt_internal_storage<T, Ts...> storage;

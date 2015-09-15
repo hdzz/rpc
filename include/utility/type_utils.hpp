@@ -105,16 +105,16 @@ namespace utility
     // Index from type(s)
     //
     template <typename U, typename ... Ts>
-    struct type_position;
+    struct type_to_index;
 
     template <typename U, typename ... Ts>
-    struct type_position <U, U, Ts...> : public std::integral_constant<std::size_t, 0> {};
+    struct type_to_index <U, U, Ts...> : public std::integral_constant<std::size_t, 0> {};
 
     template <typename U, typename T, typename ... Ts>
-    struct type_position <U, T, Ts...> : public std::integral_constant<std::size_t, 1 + type_position<U, Ts...>::value> {};
+    struct type_to_index <U, T, Ts...> : public std::integral_constant<std::size_t, 1 + type_to_index<U, Ts...>::value> {};
    
     template <typename U>
-    struct type_position<U> { static_assert (sizeof(U) == 0, "type not found in list"); };
+    struct type_to_index<U> { static_assert (sizeof(U) == 0, "type not found in list"); };
 
     //
     // Type from index
