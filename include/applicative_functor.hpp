@@ -50,7 +50,7 @@ namespace fnk
         }
 
         template <class F, typename U,
-            typename = std::enable_if_t<std::is_same<U, fnk::type_support::maybe<T>>::value>>
+            typename = std::enable_if_t<std::is_same<std::decay_t<U>, fnk::type_support::maybe<T>>::value>>
         static inline constexpr decltype(auto) apply (F && f, U && u)
         {
             using A = typename std::decay_t<U>::value_type; // U is maybe in this case
@@ -60,6 +60,27 @@ namespace fnk
                 : fnk::type_support::maybe<typename fnk::type_support::function_traits<B>::return_type>();
         }
     };
+
+    template <typename T>
+    struct applicative_functor<fnk::type_support::maybe<T> const> : applicative_functor<fnk::type_support::maybe<T>> {};
+
+    template <typename T>
+    struct applicative_functor<fnk::type_support::maybe<T> &> : applicative_functor<fnk::type_support::maybe<T>> {};
+
+    template <typename T>
+    struct applicative_functor<fnk::type_support::maybe<T> const&> : applicative_functor<fnk::type_support::maybe<T>> {};
+
+    template <typename T>
+    struct applicative_functor<fnk::type_support::maybe<T> &&> : applicative_functor<fnk::type_support::maybe<T>> {};
+
+    //
+    // Utility function
+    //
+    template <class F, class T>
+    inline constexpr decltype(auto) apply (F && f, T && t)
+    {
+        return fnk::applicative_functor<T>::apply (f, t);
+    }
 } // namespace fnk
 
 #endif // ifndef APPLICATIVE_FUNCTOR_HPP
