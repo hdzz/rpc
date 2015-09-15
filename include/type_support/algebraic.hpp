@@ -185,10 +185,12 @@ namespace detail
 
         using ntypes = std::integral_constant<std::size_t, 1 + sizeof...(Ts)>;
 
-        template <std::size_t N> 
+        template <std::size_t N,
+            typename = std::enable_if_t<N < ntypes::value>> 
         using type = std::tuple_element_t<N, std::tuple<T, Ts...>>;
 
-        template <typename U>
+        template <typename U,
+            typename = std::enable_if_t<is_adt_type<U>::value>>
         using index = fnk::utility::type_to_index<U, T, Ts...>;
     private:
         std::size_t const tindex_;

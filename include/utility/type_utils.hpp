@@ -19,7 +19,7 @@ namespace utility
     //
     // Utility type tag (essentially a boxed type for manual overloading)
     //
-    template <typename T> struct type_tag {};
+    template <typename ... Ts> struct type_tag {};
 
     //
     // Choose correct rebinding for perfect forwarding, preserving constness
