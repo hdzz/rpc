@@ -11,6 +11,7 @@
 
 #include <type_traits>
 #include <deque>
+#include <forward_list>
 #include <list>
 #include <set>
 #include <tuple>
@@ -98,6 +99,7 @@ namespace fnk
 #define DEFAULT_CONTAINERS()\
     DEFAULT_FOLDABLE_INSTANCE(std::basic_string)\
     DEFAULT_FOLDABLE_INSTANCE(std::deque)\
+    DEFAULT_FOLDABLE_INSTANCE(std::forward_list)\
     DEFAULT_FOLDABLE_INSTANCE(std::list)\
     DEFAULT_FOLDABLE_INSTANCE(std::vector)\
     DEFAULT_FOLDABLE_INSTANCE(std::set)\

@@ -10,6 +10,7 @@
 #define container_TRAITS
 
 #include <deque>
+#include <forward_list>
 #include <list>
 #include <map>
 #include <set>
@@ -144,6 +145,7 @@ namespace type_support
 
 #define DEFAULT_CONTAINERS()\
     DEFAULT_SEQUENCE_CONTAINER_TRAITS_IMPLEMENTATION(std::deque)\
+    DEFAULT_SEQUENCE_CONTAINER_TRAITS_IMPLEMENTATION(std::forward_list)\
     DEFAULT_SEQUENCE_CONTAINER_TRAITS_IMPLEMENTATION(std::list)\
     DEFAULT_SEQUENCE_CONTAINER_TRAITS_IMPLEMENTATION(std::vector)
 

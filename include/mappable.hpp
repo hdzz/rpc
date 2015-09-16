@@ -13,6 +13,7 @@
 #include <functional>
 
 #include <deque>
+#include <forward_list>
 #include <list>
 #include <map>
 #include <set>
@@ -78,9 +79,7 @@ namespace fnk
         typedef typename fnk::type_support::container_traits<C>::value_type value_type;
 
         template <class F, class C_,
-            typename = std::enable_if_t<std::is_convertible<C_, C>::value>>//,
-           // typename = std::enable_if_t
-           //     <fnk::utility::is_well_formed<F(typename fnk::type_support::container_traits<C_>::value_type)>::value>>
+            typename = std::enable_if_t<std::is_convertible<C_, C>::value>>
         static decltype(auto) map (F && f, C_ && c)
         {
             using FR = std::decay_t<typename fnk::type_support::function_traits<F>::return_type>;
@@ -109,6 +108,7 @@ namespace fnk
     struct mappable<C<Args...> &&> : public default_mappable_container<C<Args...>> {};
 
 DEFAULT_MAPPABLE_CONTAINER_INSTANCE(std::deque);
+DEFAULT_MAPPABLE_CONTAINER_INSTANCE(std::forward_list);
 DEFAULT_MAPPABLE_CONTAINER_INSTANCE(std::list);
 DEFAULT_MAPPABLE_CONTAINER_INSTANCE(std::set);
 DEFAULT_MAPPABLE_CONTAINER_INSTANCE(std::multiset);

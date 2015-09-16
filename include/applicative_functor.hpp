@@ -26,27 +26,78 @@ namespace fnk
 
     template <typename T,
         typename = std::enable_if_t<fnk::functor<T>::is_functor_instance::value>>
-    struct default_applicative_functor : public functor<T>
+    struct default_applicative_functor : public fnk::functor<T>
     {
-        template <typename T_,
-            std::enable_if_t<std::is_convertible<T_,T>::value>>
-        static inline constexpr decltype(auto) pure (T_ &&);
+        template <typename A>
+        static inline constexpr decltype(auto) pure (A &&);
 
         template <class F, typename U,
-            typename = std::enable_if_t<std::is_same<U, T>::value>>
+            typename = std::enable_if_t<std::is_same<std::decay_t<F>, T>::value>,
+            typename = std::enable_if_t<std::is_same<std::decay_t<U>, T>::value>>
         static inline constexpr decltype(auto) apply (F &&, U &&);
     
         struct is_applicative_functor_instance : public std::true_type {};
     };
 
+    template <typename C,
+        typename = std::enable_if_t<fnk::functor<C>::is_functor_instance::value>>
+    struct default_applicative_functor_container : public fnk::default_applicative_functor<C>
+    {
+        template <typename A>
+        static inline constexpr decltype(auto) pure (A && a)
+        {
+            using OT = typename fnk::type_support::container_traits<C>::template rebind <A>;
+            return OT {std::forward<A>(a)};
+        }
+
+        template <class F, typename U,
+            typename = std::enable_if_t<std::is_same<std::decay_t<F>, C>::value>,
+            typename = std::enable_if_t<std::is_same<std::decay_t<U>, C>::value>>
+        static inline constexpr decltype(auto) apply (F && fs, U && us)
+        {
+            using FT = typename fnk::type_support::container_traits<F>::value_type;
+            using OT = typename fnk::type_support::container_traits<C>::template 
+                rebind<typename fnk::type_support::function_traits<FT>::return_type>;
+            OT out {};
+            for (auto&& f : fs)
+               for (auto&& u : us)
+                  fnk::type_support::container_traits<OT>::insert (out, fnk::eval (f, u));
+           return out; 
+        }
+    };
+
+#define DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(C)\
+        template <class ... Args>\
+        struct applicative_functor<C<Args...>> : public default_applicative_functor_container<C<Args...>> {};\
+        template <class ... Args>\
+        struct applicative_functor<C<Args...> &> : public default_applicative_functor_container<C<Args...>> {};\
+        template <class ... Args>\
+        struct applicative_functor<C<Args...> const> : public default_applicative_functor_container<C<Args...>> {};\
+        template <class ... Args>\
+        struct applicative_functor<C<Args...> const&> : public default_applicative_functor_container<C<Args...>> {};\
+        template <class ... Args>\
+        struct applicative_functor<C<Args...> &&> : public default_applicative_functor_container<C<Args...>> {};
+
+    DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(std::deque);
+    DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(std::forward_list);
+    DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(std::list);
+    DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(std::set);
+    DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(std::multiset);
+    DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(std::unordered_set);
+    DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(std::unordered_multiset);
+    DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(std::basic_string);
+    DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE(std::vector);
+
+#undef DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE
+
     template <typename T>
     struct applicative_functor<fnk::type_support::maybe<T>> : public default_applicative_functor<fnk::type_support::maybe<T>>
     {
-        template <typename T_,
-            typename = std::enable_if_t<std::is_convertible<T_,T>::value>>
-        static inline constexpr decltype(auto) pure (T_ && t)
+        template <typename A,
+            typename = std::enable_if_t<std::is_convertible<A,T>::value>>
+        static inline constexpr decltype(auto) pure (A && a)
         {
-            return fnk::type_support::make_maybe (std::forward<T>(t));
+            return fnk::type_support::make_maybe<T> (std::forward<A>(a));
         }
 
         template <class F, typename U,

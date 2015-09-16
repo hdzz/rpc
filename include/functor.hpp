@@ -22,34 +22,74 @@ namespace fnk
     {
         struct is_functor_instance : public std::false_type {};   
     };
-    
-    template <class T,
-        typename = std::enable_if_t<fnk::mappable<T>::is_mappable_instance::value>>
+ 
+    template <typename T>
     struct default_functor 
     {
         template <class F, typename U = typename fnk::type_support::function_traits<F>::return_type,
             typename = std::enable_if_t<fnk::functor<U>::is_functor_instance::value>>
-        static constexpr std::function<U(T)> fmap (F && f)
-        {
-            return [=] (T const& t)
-            {
-                return fnk::map (f, t);
-            };
-        }
+        static constexpr std::function<U(T)> fmap (F &&);
 
         template <class F, typename T_, typename U = typename fnk::type_support::function_traits<F>::return_type,
             typename = std::enable_if_t<fnk::functor<U>::is_functor_instance::value>,
             typename = std::enable_if_t<std::is_same<T, T_>::value>>
-        static constexpr U fmap (F && f, T_ && t)
+        static constexpr U fmap (F &&, T_ &&);
+
+        struct is_functor_instance : public std::true_type {};
+    };   
+
+    template <class C,
+        typename = std::enable_if_t<fnk::mappable<C>::is_mappable_instance::value>>
+    struct default_functor_container : public default_functor<C>
+    {
+        template <class F, typename U = typename fnk::type_support::function_traits<F>::return_type,
+            typename = std::enable_if_t<fnk::functor<U>::is_functor_instance::value>>
+        static constexpr std::function<U(C)> fmap (F && f)
         {
-            return fnk::map (f, std::forward<T_>(t));
+            return [=] (C const& c)
+            {
+                return fnk::map (f, c);
+            };
+        }
+
+        template <class F, typename C_, typename U = typename fnk::type_support::function_traits<F>::return_type,
+            typename = std::enable_if_t<fnk::functor<U>::is_functor_instance::value>,
+            typename = std::enable_if_t<std::is_same<std::decay_t<C_>, C>::value>>
+        static constexpr U fmap (F && f, C_ && c)
+        {
+            return fnk::map (f, std::forward<C_>(c));
         }
 
         struct is_functor_instance : public std::true_type {};
     };
 
+#define DEFAULT_FUNCTOR_CONTAINER_INSTANCE(C)\
+        template <class ... Args>\
+        struct functor<C<Args...>> : public default_functor_container<C<Args...>> {};\
+        template <class ... Args>\
+        struct functor<C<Args...> &> : public default_functor_container<C<Args...>> {};\
+        template <class ... Args>\
+        struct functor<C<Args...> const> : public default_functor_container<C<Args...>> {};\
+        template <class ... Args>\
+        struct functor<C<Args...> const&> : public default_functor_container<C<Args...>> {};\
+        template <class ... Args>\
+        struct functor<C<Args...> &&> : public default_functor_container<C<Args...>> {};
+
+    DEFAULT_FUNCTOR_CONTAINER_INSTANCE(std::deque);
+    DEFAULT_FUNCTOR_CONTAINER_INSTANCE(std::forward_list);
+    DEFAULT_FUNCTOR_CONTAINER_INSTANCE(std::list);
+    DEFAULT_FUNCTOR_CONTAINER_INSTANCE(std::set);
+    DEFAULT_FUNCTOR_CONTAINER_INSTANCE(std::multiset);
+    DEFAULT_FUNCTOR_CONTAINER_INSTANCE(std::unordered_set);
+    DEFAULT_FUNCTOR_CONTAINER_INSTANCE(std::unordered_multiset);
+    DEFAULT_FUNCTOR_CONTAINER_INSTANCE(std::basic_string);
+    DEFAULT_FUNCTOR_CONTAINER_INSTANCE(std::vector);
+
+#undef DEFAULT_FUNCTOR_CONTAINER_INSTANCE
+
+
     template <class T>
-    struct functor<fnk::type_support::maybe<T>> 
+    struct functor<fnk::type_support::maybe<T>> : fnk::default_functor<fnk::type_support::maybe<T>>
     {
         template <class F>
         static constexpr decltype(auto) fmap (F && f)
@@ -66,7 +106,6 @@ namespace fnk
             using U = typename fnk::type_support::function_traits<F>::return_type;
             return static_cast<bool>(m) ? fnk::type_support::make_maybe (f(*m)) : fnk::type_support::maybe<U> {}; 
         }
-        struct is_functor_instance : public std::true_type {};
     };
 
     template <class T>
