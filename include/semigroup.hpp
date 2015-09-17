@@ -13,6 +13,7 @@
 #include <functional>
 #include <type_traits>
 
+#include <complex>
 #include <deque>
 #include <list>
 #include <string>
@@ -106,7 +107,10 @@ namespace fnk
     SEMIGROUP_INSTANCE(size_t)\
     SEMIGROUP_INSTANCE(float)\
     SEMIGROUP_INSTANCE(double)\
-    SEMIGROUP_INSTANCE(long double)
+    SEMIGROUP_INSTANCE(long double)\
+    SEMIGROUP_INSTANCE(std::complex<float>)\
+    SEMIGROUP_INSTANCE(std::complex<double>)\
+    SEMIGROUP_INSTANCE(std::complex<long double>)
 
 #define SEMIGROUP_INSTANCE(T)\
     template<>\

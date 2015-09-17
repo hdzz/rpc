@@ -13,6 +13,7 @@
 #include <functional>
 #include <type_traits>
 
+#include <complex>
 #include <deque>
 #include <list>
 #include <string>
@@ -75,7 +76,10 @@ namespace fnk
     MONOID_INSTANCE(size_t)\
     MONOID_INSTANCE(float)\
     MONOID_INSTANCE(double)\
-    MONOID_INSTANCE(long double)
+    MONOID_INSTANCE(long double)\
+    MONOID_INSTANCE(std::complex<float>)\
+    MONOID_INSTANCE(std::complex<double>)\
+    MONOID_INSTANCE(std::complex<long double>)
 
 #define MONOID_INSTANCE(T)\
     template<>\
