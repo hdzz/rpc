@@ -44,14 +44,14 @@ namespace utility
         static inline void increment (std::tuple<Args...> & a)
         {
             tuple_helper<I-1>::increment(a);
-            std::get<I>(a)++;
+            ++std::get<I>(a);
         }
 
         template <typename ... Args>
         static inline void increment (std::tuple<Args...> && a)
         {
             tuple_helper<I-1>::increment(std::forward(a));
-            std::get<I>(std::forward(a))++;
+            ++std::get<I>(std::forward(a));
         }
 
         template <class Tup, typename ... Args>
@@ -105,13 +105,13 @@ namespace utility
         template <typename ... Args>
         static inline void increment (std::tuple<Args...> & a)
         {
-            std::get<0>(a)++;
+            ++std::get<0>(a);
         }
 
         template <typename ... Args>
         static inline void increment (std::tuple<Args...> && a)
         {
-            std::get<0>(std::forward(a))++;
+            ++std::get<0>(std::forward(a));
         }
 
         template <class Tup, typename ... Args>

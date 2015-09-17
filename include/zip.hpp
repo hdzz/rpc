@@ -61,8 +61,8 @@ namespace detail
         using OT = typename fnk::type_support::container_traits<CT>::template rebind<TupT>;
         
         OT out {};
-        auto const ends = std::make_tuple (std::forward<C>(cs).end()...);
-        for (auto iter = std::make_tuple (std::forward<C>(cs).begin()...);
+        auto const ends (std::make_tuple (std::forward<C>(cs).end()...));
+        for (auto iter (std::make_tuple (std::forward<C>(cs).begin()...));
             !fnk::utility::tuple_any_equal(iter, ends);
              fnk::utility::tuple_increment(iter))
         {
@@ -81,8 +81,8 @@ namespace detail
             rebind<typename fnk::type_support::function_traits<F>::return_type>;
         
         OT out {};
-        auto const ends = std::make_tuple (std::forward<C>(cs).end()...);
-        for (auto iter = std::make_tuple (std::forward<C>(cs).begin()...);
+        auto const ends (std::make_tuple (std::forward<C>(cs).end()...));
+        for (auto iter (std::make_tuple (std::forward<C>(cs).begin()...));
             !fnk::utility::tuple_any_equal(iter, ends);
              fnk::utility::tuple_increment(iter))
         {
@@ -108,8 +108,8 @@ namespace detail
                     (F, typename fnk::type_support::container_traits<AT>::value_type)>>; 
         
         OT out {};
-        auto const ends = std::make_tuple (std::forward<C>(cs).end()...);
-        for (auto iter = std::make_tuple (std::forward<C>(cs).begin()...);
+        auto const ends (std::make_tuple (std::forward<C>(cs).end()...));
+        for (auto iter (std::make_tuple (std::forward<C>(cs).begin()...));
             !fnk::utility::tuple_any_equal(iter, ends);
              fnk::utility::tuple_increment(iter))
         {
