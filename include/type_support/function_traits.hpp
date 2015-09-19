@@ -15,6 +15,38 @@ namespace fnk
 {
 namespace type_support
 {
+namespace detail
+{
+    template<typename T>
+    struct remove_class_signature {};
+
+    template<typename C, typename R, typename... A>
+    struct remove_class_signature<R(C::*)(A...)>                { using type = R(A...); };
+    
+    template<typename C, typename R, typename... A>
+    struct remove_class_signature<R(C::*)(A...) const>          { using type = R(A...); };
+    
+    template<typename C, typename R, typename... A>
+    struct remove_class_signature<R(C::*)(A...) volatile>       { using type = R(A...); };
+    
+    template<typename C, typename R, typename... A>
+    struct remove_class_signature<R(C::*)(A...) const volatile> { using type = R(A...); };
+
+    template<typename T>
+    struct call_type
+    {
+        using type = typename remove_class_signature<decltype(&std::remove_reference<T>::type::operator())>::type;
+    };
+    
+    template<typename R, typename... A>
+    struct call_type<R(A...)>    { using type = R(A...); };
+    
+    template<typename R, typename... A>
+    struct call_type<R(&)(A...)> { using type = R(A...); };
+    
+    template<typename R, typename... A>
+    struct call_type<R(*)(A...)> { using type = R(A...); };
+} // namespace detail
     //
     // Function Traits
     //

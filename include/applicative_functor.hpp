@@ -34,7 +34,7 @@ namespace fnk
         template <class F, typename U,
             typename = std::enable_if_t<std::is_same<std::decay_t<F>, T>::value>,
             typename = std::enable_if_t<std::is_same<std::decay_t<U>, T>::value>>
-        static inline constexpr decltype(auto) apply (F &&, U &&);
+        static inline constexpr decltype(auto) apply (F const&, U const&);
     
         struct is_applicative_functor_instance : public std::true_type {};
     };
@@ -53,14 +53,14 @@ namespace fnk
         template <class F, typename U,
             typename = std::enable_if_t<std::is_same<std::decay_t<F>, C>::value>,
             typename = std::enable_if_t<std::is_same<std::decay_t<U>, C>::value>>
-        static inline constexpr decltype(auto) apply (F && fs, U && us)
+        static inline constexpr decltype(auto) apply (F const& fs, U const& us)
         {
             using FT = typename fnk::type_support::container_traits<F>::value_type;
             using OT = typename fnk::type_support::container_traits<C>::template 
                 rebind<typename fnk::type_support::function_traits<FT>::return_type>;
             OT out {};
-            for (auto&& f : fs)
-               for (auto&& u : us)
+            for (auto const& f : fs)
+               for (auto const& u : us)
                   fnk::type_support::container_traits<OT>::insert (out, fnk::eval (f, u));
            return out; 
         }

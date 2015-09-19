@@ -203,7 +203,7 @@ namespace type_support
         using rebind = maybe<U>; 
 
         // implementation
-        constexpr maybe (void) noexcept : detail::maybe_t<T> () {};
+        constexpr maybe (void) noexcept : detail::maybe_t<T> () {}
         constexpr maybe (maybe<T> const& m) : detail::maybe_t<T> ()
         {
             if (!m.is_nothing()) {
@@ -251,7 +251,7 @@ namespace type_support
             if      (detail::maybe_t<T>::init && !m.init)
                 detail::maybe_t<T>::clear ();
             else if (!detail::maybe_t<T>::init && m.init)
-                detail::maybe_t<T>::set (*m);
+                detail::maybe_t<T>::set (std::move(*m));
             else if (detail::maybe_t<T>::init && m.init)
                 detail::maybe_t<T>::value() = std::move(*m);
             return *this;

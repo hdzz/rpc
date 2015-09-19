@@ -49,9 +49,9 @@ namespace fnk
         static constexpr decltype(auto) filter (P && pred, C_ && c)
         {
             using OT = fnk::utility::rebind_argument_t<C_, C>;
-            OT out;
-            for (auto&& e : std::forward<OT>(c))
-               if (pred (e))
+            OT out {};
+            for (auto const& e : std::forward<C_>(c))
+               if (fnk::eval (pred , e))
                   fnk::type_support::container_traits<OT>::insert (out, e);
             return out; 
         }

@@ -6,8 +6,8 @@
 // License: Please see LICENSE.md
 //
 
-#ifndef container_TRAITS
-#define container_TRAITS
+#ifndef CONTAINER_TRAITS
+#define CONTAINER_TRAITS
 
 #include <deque>
 #include <forward_list>
@@ -25,13 +25,7 @@ namespace fnk
 namespace type_support
 {
     template <class C>
-    struct container_traits
-    {
-        // T value_type
-        // void insert (C&, T)
-        // void concat (C&, C)
-        // T rebind<U>
-    };
+    struct container_traits;
 
     template <class C>
     struct default_container_traits
@@ -45,31 +39,35 @@ namespace type_support
     };
 
     template <class C>
-    struct sequence_container_traits : default_container_traits<C> {}; 
+    struct sequence_container_traits : public default_container_traits<C> {}; 
 
     template <template <class> class C, class T>
-    struct sequence_container_traits<C<T>> : default_container_traits<C<T>>
+    struct sequence_container_traits<C<T>> : public default_container_traits<C<T>>
     {
+    private:
         using CT = C<T>;
-        typedef T value_type;
- 
+    public: 
         static inline constexpr decltype(auto) size (CT const& c) noexcept
         {
             return c.size();
         }
 
         template <typename T_, typename = std::enable_if_t<std::is_convertible<T_,T>::value>>
-        static inline constexpr void insert (CT & c, T_ && t)
+        static inline void insert (CT & c, T_ && t) 
         { 
             c.push_back (std::forward<T_>(t));
         }
 
-        static inline constexpr void concat (CT & l, CT const& r)
+        static inline void concat (CT & l, CT const& r) 
         {
             l.insert (l.end(), r.cbegin(), r.cend());
         }
 
-        template <class U> using rebind = C<U>;
+        template <class U>
+        using rebind = C<U>;
+        
+        using value_type = T;
+        
         struct is_container  : public std::true_type {};
         struct is_sequential : public std::true_type {};
     };
@@ -77,9 +75,9 @@ namespace type_support
     template <template <class, class> class C, class T, class Alloc>
     struct sequence_container_traits<C<T,Alloc>> : default_container_traits<C<T,Alloc>>
     {
+    private:
         using CT = C<T,Alloc>;
-        typedef T value_type;
- 
+    public: 
         static inline constexpr decltype(auto) size (CT const& c) noexcept
         {
             return c.size();
@@ -96,7 +94,11 @@ namespace type_support
             l.insert (l.end(), r.cbegin(), r.cend());
         }
 
-        template <class U> using rebind = C<U,typename Alloc::template rebind<U>::other>;
+        template <class U>
+        using rebind = C<U,typename Alloc::template rebind<U>::other>;
+        
+        using value_type = T;
+        
         struct is_container  : public std::true_type {};
         struct is_sequential : public std::true_type {};
     };
@@ -125,14 +127,14 @@ namespace type_support
 #undef DEFAULT_CONTAINERS
 
     template <class C>
-    struct associative_container_traits : default_container_traits<C> {};
+    struct associative_container_traits : public default_container_traits<C> {};
 
     template <template<typename,typename,typename> class C, typename T, template <typename> class Comp, typename Alloc>
-    struct associative_container_traits<C<T,Comp<T>,Alloc>> : default_container_traits<C<T,Comp<T>,Alloc>>
+    struct associative_container_traits<C<T,Comp<T>,Alloc>> : public default_container_traits<C<T,Comp<T>,Alloc>>
     {
-        using CT = typename std::remove_reference_t<C<T,Comp<T>,Alloc>>;
-        typedef typename CT::value_type value_type;
-       
+    private:
+        using CT = C<T,Comp<T>,Alloc>;
+    public: 
         static inline constexpr decltype(auto) size (CT const& c) noexcept
         {
             return c.size();
@@ -149,7 +151,11 @@ namespace type_support
             l.insert (r.cbegin(), r.cend());
         }
 
-        template <class U> using rebind = C<U,Comp<U>,typename Alloc::template rebind<U>::other>;
+        template <class U>
+        using rebind = C<U,Comp<U>,typename Alloc::template rebind<U>::other>;
+        
+        using value_type = typename CT::value_type;
+
         struct is_container   : public std::true_type {};
         struct is_associative : public std::true_type {};
     };
@@ -178,7 +184,7 @@ namespace type_support
 #undef DEFAULT_CONTAINERS
 
     template<class C>
-    struct hash_container_traits : default_container_traits<C> {};
+    struct hash_container_traits : public default_container_traits<C> {};
 
     template <
         template <typename,typename,typename,typename> class C, 
@@ -187,11 +193,11 @@ namespace type_support
         template <typename> class Comp,
         typename Alloc
     >
-    struct hash_container_traits<C<T,Hash<T>,Comp<T>,Alloc>> : default_container_traits<C<T,Hash<T>,Comp<T>,Alloc>>
+    struct hash_container_traits<C<T,Hash<T>,Comp<T>,Alloc>> : public default_container_traits<C<T,Hash<T>,Comp<T>,Alloc>>
     {
+    private:
         using CT = typename std::remove_reference_t<C<T,Hash<T>,Comp<T>,Alloc>>;
-        typedef typename CT::value_type value_type;
-
+    public:
         static inline constexpr decltype(auto) size (CT const& c) noexcept
         {
             return c.size();
@@ -208,7 +214,11 @@ namespace type_support
             l.insert (r.cbegin(), r.cend());
         }
 
-        template<class U> using rebind = C<U,Hash<U>,Comp<U>,typename Alloc::template rebind<U>::other>;
+        template<class U>
+        using rebind = C<U,Hash<U>,Comp<U>,typename Alloc::template rebind<U>::other>;
+        
+        using value_type = typename CT::value_type;
+
         struct is_container : public std::true_type {};
         struct is_hash      : public std::true_type {};
     };
@@ -237,11 +247,11 @@ namespace type_support
 #undef DEFAULT_CONTAINERS
 
     template <typename T, template <typename> class K, typename Alloc>
-    struct container_traits<std::basic_string<T,K<T>,Alloc>> : default_container_traits<std::basic_string<T,K<T>,Alloc>>
+    struct container_traits<std::basic_string<T,K<T>,Alloc>> : public default_container_traits<std::basic_string<T,K<T>,Alloc>>
     {
+    private:
         using S = std::basic_string<T,K<T>,Alloc>;
-        typedef typename S::value_type value_type;
-       
+    public: 
         template <typename S_, typename = std::enable_if_t<std::is_convertible<S_, S>::value>>
         static inline constexpr decltype(auto) size (S_ && s) noexcept
         {
@@ -261,7 +271,11 @@ namespace type_support
             l.append (std::forward<S_>(r));
         }
         
-        template <class U> using rebind = std::basic_string<U,K<U>,typename Alloc::template rebind<U>::other>;
+        template <class U>
+        using rebind = std::basic_string<U,K<U>,typename Alloc::template rebind<U>::other>;
+        
+        using value_type = typename S::value_type;
+
         struct is_container  : public std::true_type {};
         struct is_sequential : public std::true_type {};
     };

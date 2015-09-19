@@ -32,7 +32,7 @@ namespace fnk
     {
         using A = std::decay_t<typename fnk::type_support::container_traits<C>::value_type>;
         return fnk::rfoldable<C>::template foldr
-            ([](auto&& l, auto&& r) { return fnk::append<decltype(l),decltype(r)>(l, r); }, fnk::monoid<A>::unity(), c); 
+            ([](auto const& l, auto const& r) { return fnk::append<decltype(l),decltype(r)>(l, r); }, fnk::monoid<A>::unity(), c); 
     }
 } // namespace fnk
 

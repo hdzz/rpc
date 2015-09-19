@@ -1,5 +1,5 @@
 //
-// A small expression evalutaion interpreter
+// A small example of algebraic data type usage
 //
 
 #include <iostream>
@@ -8,13 +8,6 @@
 #include "filterable.hpp"
 #include "mappable.hpp"
 #include "type_support/algebraic.hpp"
-#include "type_support/fix.hpp"
-
-template <typename T>
-decltype(auto) foo (T t)
-{
-    return t; 
-}
 
 int main (void)
 {

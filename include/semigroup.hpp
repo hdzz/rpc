@@ -48,13 +48,13 @@ namespace fnk
     struct default_semigroup_container
     {
         template <typename T_, typename = std::enable_if_t<std::is_convertible<T_, T>::value>>
-        static inline constexpr decltype(auto) append (T_ && l, T_ && r)
+        static inline decltype(auto) append (T_ && l, T_ && r)
         {
             using U = std::remove_cv_t<fnk::utility::rebind_argument_t<T_,T>>;
             using W = fnk::utility::rebind_argument_t<T_,T>;
 
             U out (std::forward<W>(l));
-            for (auto&& e : std::forward<W>(r))
+            for (auto const& e : std::forward<W>(r))
                 fnk::type_support::container_traits<U>::insert (out, e);
             return out;
         }
