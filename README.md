@@ -2,8 +2,16 @@
 
 funktional is a c++14 library for (mostly) pure functional programming.
 
+# Some points on design philosophy
+
+- Let RAII do it's work: With the exception of direct modification (insert, et cetera), structural
+  transformations such as append, map, filter, fold, flatten, and so on should never modify data structures.
+
+- Always capture by value when writing lambdas. This removes the possibility of confusion on a library user's part. If
+  copies are too expensive to make, `std::ref` and `std::cref` can be used.
+
 # TODO
-- implement recursive data type wrapper (`fix<F>` will not work without this).
+- Implement recursive data type wrapper (`fix<F>` will not work without this).
 
 # LICENSE
 
