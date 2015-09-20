@@ -88,14 +88,14 @@ namespace fnk
 #undef DEFAULT_MONAD_CONTAINER_INSTANCE
 
     template <typename T>
-    struct monad<fnk::type_support::maybe<T>> : public default_monad<fnk::type_support::maybe<T>>
+    struct monad<fnk::maybe<T>> : public default_monad<fnk::maybe<T>>
     {
         template <class F, typename A,
             typename = std::enable_if_t<std::is_same<std::decay_t<A>, T>::value>>
-        static inline constexpr decltype(auto) mbind (fnk::type_support::maybe<A> && m, F && f)
+        static inline constexpr decltype(auto) mbind (fnk::maybe<A> && m, F && f)
         {
             using B = typename fnk::type_support::function_traits<F>::return_type; 
-            return static_cast<bool>(m) ? fnk::eval (f, *m) : fnk::type_support::maybe<B>();
+            return static_cast<bool>(m) ? fnk::eval (f, *m) : fnk::maybe<B>();
         }
     };
 

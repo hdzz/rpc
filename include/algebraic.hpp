@@ -30,8 +30,6 @@
 
 namespace fnk
 {
-namespace type_support
-{
 namespace detail
 {
     template <typename T, typename ... Ts>
@@ -214,7 +212,6 @@ namespace detail
     
     template <typename T, typename ... Ts>
     struct is_algebraic<adt<T, Ts...> &&> : public std::true_type {};
-} // namespace type_support 
 } // namespace fnk
 
 #endif // ifndef ALGEBRAIC_HPP

@@ -17,8 +17,6 @@
 
 namespace fnk
 {
-namespace type_support
-{
     template <class T>
     struct maybe;
 
@@ -726,7 +724,6 @@ namespace type_support
     {
         return bool(x) ? v >= *x : true;
     }
-} // namespace type_support
 } // namespace fnk
 
 #endif // ifdef MAYBE_HPP

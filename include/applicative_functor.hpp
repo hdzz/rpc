@@ -13,7 +13,7 @@
 
 #include "functor.hpp"
 #include "mappable.hpp"
-#include "type_support/maybe.hpp"
+#include "maybe.hpp"
 #include "type_support/function_traits.hpp"
 
 namespace fnk
@@ -91,38 +91,38 @@ namespace fnk
 #undef DEFAULT_APPLICATIVE_FUNCTOR_CONTAINER_INSTANCE
 
     template <typename T>
-    struct applicative_functor<fnk::type_support::maybe<T>> : public default_applicative_functor<fnk::type_support::maybe<T>>
+    struct applicative_functor<fnk::maybe<T>> : public default_applicative_functor<fnk::maybe<T>>
     {
         template <typename A,
             typename = std::enable_if_t<std::is_convertible<A,T>::value>>
         static inline constexpr decltype(auto) pure (A && a)
         {
-            return fnk::type_support::make_maybe<T> (std::forward<A>(a));
+            return fnk::make_maybe<T> (std::forward<A>(a));
         }
 
         template <class F, typename U,
-            typename = std::enable_if_t<std::is_same<std::decay_t<U>, fnk::type_support::maybe<T>>::value>>
+            typename = std::enable_if_t<std::is_same<std::decay_t<U>, fnk::maybe<T>>::value>>
         static inline constexpr decltype(auto) apply (F && f, U && u)
         {
             using A = typename std::decay_t<U>::value_type; // U is maybe in this case
             using B = typename std::decay_t<F>::value_type; // F is maybe in this case
             return static_cast<bool>(std::forward<F>(f))
-                ? fnk::functor<fnk::type_support::maybe<A>>::fmap (*f, std::forward<U>(u))
-                : fnk::type_support::maybe<typename fnk::type_support::function_traits<B>::return_type>();
+                ? fnk::functor<fnk::maybe<A>>::fmap (*f, std::forward<U>(u))
+                : fnk::maybe<typename fnk::type_support::function_traits<B>::return_type>();
         }
     };
 
     template <typename T>
-    struct applicative_functor<fnk::type_support::maybe<T> const> : applicative_functor<fnk::type_support::maybe<T>> {};
+    struct applicative_functor<fnk::maybe<T> const> : applicative_functor<fnk::maybe<T>> {};
 
     template <typename T>
-    struct applicative_functor<fnk::type_support::maybe<T> &> : applicative_functor<fnk::type_support::maybe<T>> {};
+    struct applicative_functor<fnk::maybe<T> &> : applicative_functor<fnk::maybe<T>> {};
 
     template <typename T>
-    struct applicative_functor<fnk::type_support::maybe<T> const&> : applicative_functor<fnk::type_support::maybe<T>> {};
+    struct applicative_functor<fnk::maybe<T> const&> : applicative_functor<fnk::maybe<T>> {};
 
     template <typename T>
-    struct applicative_functor<fnk::type_support::maybe<T> &&> : applicative_functor<fnk::type_support::maybe<T>> {};
+    struct applicative_functor<fnk::maybe<T> &&> : applicative_functor<fnk::maybe<T>> {};
 
     //
     // Utility function

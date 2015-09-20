@@ -7,11 +7,11 @@
 
 #include "filterable.hpp"
 #include "mappable.hpp"
-#include "type_support/algebraic.hpp"
+#include "algebraic.hpp"
 
 int main (void)
 {
-    using data_t = fnk::type_support::adt<int, std::string>; 
+    using data_t = fnk::adt<int, std::string>; 
     std::list<data_t> inputs;
 
     std::string s;

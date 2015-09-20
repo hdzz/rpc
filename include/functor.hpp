@@ -12,7 +12,7 @@
 #include <type_traits>
 
 #include "mappable.hpp"
-#include "type_support/maybe.hpp"
+#include "maybe.hpp"
 #include "type_support/function_traits.hpp"
 
 namespace fnk
@@ -89,36 +89,36 @@ namespace fnk
 
 
     template <class T>
-    struct functor<fnk::type_support::maybe<T>> : fnk::default_functor<fnk::type_support::maybe<T>>
+    struct functor<fnk::maybe<T>> : fnk::default_functor<fnk::maybe<T>>
     {
         template <class F>
         static constexpr decltype(auto) fmap (F && f)
         {
             using U = typename fnk::type_support::function_traits<F>::return_type;
-            return [=] (fnk::type_support::maybe<T> const& m)
+            return [=] (fnk::maybe<T> const& m)
             {
-                return static_cast<bool>(m) ? fnk::type_support::make_maybe (f(*m)) : fnk::type_support::maybe<U> {};
+                return static_cast<bool>(m) ? fnk::make_maybe (f(*m)) : fnk::maybe<U> {};
             };
         }
         template <class F>
-        static constexpr decltype(auto) fmap (F && f, fnk::type_support::maybe<T> const& m)
+        static constexpr decltype(auto) fmap (F && f, fnk::maybe<T> const& m)
         {
             using U = typename fnk::type_support::function_traits<F>::return_type;
-            return static_cast<bool>(m) ? fnk::type_support::make_maybe (f(*m)) : fnk::type_support::maybe<U> {}; 
+            return static_cast<bool>(m) ? fnk::make_maybe (f(*m)) : fnk::maybe<U> {}; 
         }
     };
 
     template <class T>
-    struct functor<fnk::type_support::maybe<T> const> : public functor<fnk::type_support::maybe<T>> {};
+    struct functor<fnk::maybe<T> const> : public functor<fnk::maybe<T>> {};
     
     template <class T>
-    struct functor<fnk::type_support::maybe<T> &> : public functor<fnk::type_support::maybe<T>> {};
+    struct functor<fnk::maybe<T> &> : public functor<fnk::maybe<T>> {};
     
     template <class T>
-    struct functor<fnk::type_support::maybe<T> const&> : public functor<fnk::type_support::maybe<T>> {};
+    struct functor<fnk::maybe<T> const&> : public functor<fnk::maybe<T>> {};
     
     template <class T>
-    struct functor<fnk::type_support::maybe<T> &&> : public functor<fnk::type_support::maybe<T>> {};
+    struct functor<fnk::maybe<T> &&> : public functor<fnk::maybe<T>> {};
 
     template <template <typename...> class C, typename ... Ts>
     struct functor<C<Ts...>> : public default_functor<C<Ts...>>

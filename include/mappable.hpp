@@ -23,7 +23,7 @@
 
 #include "defer.hpp"
 #include "eval.hpp"
-#include "type_support/algebraic.hpp"
+#include "algebraic.hpp"
 #include "type_support/container_traits.hpp"
 #include "type_support/function_traits.hpp"
 #include "utility/type_utils.hpp"
