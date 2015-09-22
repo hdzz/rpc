@@ -19,8 +19,8 @@ decltype(auto) repeat_string_tup (std::tuple<std::string const, std::size_t cons
 
 int main (void)
 {
-    std::list<std::size_t const> li { 0, 1, 2, 3 };
-    std::list<std::string const> ls { "nothing", "test", "string", "repeat" };
+    std::list<std::size_t const> li { 0, 1, 2, 3, 4 };
+    std::list<std::string const> ls { "nothing", "test", "string", "repeat", "fourtimes" };
 
     //
     // Two ways to perform the same operation

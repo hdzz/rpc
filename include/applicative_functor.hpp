@@ -11,6 +11,14 @@
 
 #include <type_traits>
 
+#include <deque>
+#include <forward_list>
+#include <list>
+#include <set>
+#include <map>
+#include <vector>
+#include <string>
+
 #include "functor.hpp"
 #include "mappable.hpp"
 #include "maybe.hpp"

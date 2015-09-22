@@ -15,6 +15,7 @@
 
 #include <complex>
 #include <deque>
+#include <forward_list>
 #include <list>
 #include <string>
 #include <vector>
@@ -99,10 +100,11 @@ namespace fnk
 #undef DEFAULT_TYPES
 
 #define DEFAULT_CONTAINERS()\
-    MONOID_INSTANCE_CONTAINER(std::vector)\
+    MONOID_INSTANCE_CONTAINER(std::basic_string)\
     MONOID_INSTANCE_CONTAINER(std::deque)\
+    MONOID_INSTANCE_CONTAINER(std::forward_list)\
     MONOID_INSTANCE_CONTAINER(std::list)\
-    MONOID_INSTANCE_CONTAINER(std::basic_string)
+    MONOID_INSTANCE_CONTAINER(std::vector)
 
 #define MONOID_INSTANCE_CONTAINER(C)\
     template <typename ... Args>\

@@ -15,6 +15,7 @@
 
 #include <complex>
 #include <deque>
+#include <forward_list>
 #include <list>
 #include <string>
 #include <vector>
@@ -132,6 +133,7 @@ namespace fnk
 #define DEFAULT_CONTAINERS()\
     SEMIGROUP_INSTANCE_CONTAINER(std::vector)\
     SEMIGROUP_INSTANCE_CONTAINER(std::deque)\
+    SEMIGROUP_INSTANCE_CONTAINER(std::forward_list)\
     SEMIGROUP_INSTANCE_CONTAINER(std::list)\
     SEMIGROUP_INSTANCE_CONTAINER(std::basic_string)
 

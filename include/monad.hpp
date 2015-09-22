@@ -12,10 +12,11 @@
 #include <type_traits>
 
 #include <deque>
-#include <string>
+#include <forward_list>
 #include <list>
 #include <set>
 #include <vector>
+#include <string>
 
 #include "applicative_functor.hpp"
 #include "concat.hpp"
@@ -68,21 +69,22 @@ namespace fnk
  
 #define DEFAULT_MONAD_CONTAINER_INSTANCE(C)\
         template <class ... Args>\
-        struct monad<C<Args...>> : public default_monad_container<C<Args...>> {};\
+        struct monad<C<Args...>>        : public default_monad_container<C<Args...>> {};\
         template <class ... Args>\
-        struct monad<C<Args...> &> : public default_monad_container<C<Args...>> {};\
+        struct monad<C<Args...> &>      : public default_monad_container<C<Args...>> {};\
         template <class ... Args>\
-        struct monad<C<Args...> const> : public default_monad_container<C<Args...>> {};\
+        struct monad<C<Args...> const>  : public default_monad_container<C<Args...>> {};\
         template <class ... Args>\
         struct monad<C<Args...> const&> : public default_monad_container<C<Args...>> {};\
         template <class ... Args>\
-        struct monad<C<Args...> &&> : public default_monad_container<C<Args...>> {};
+        struct monad<C<Args...> &&>     : public default_monad_container<C<Args...>> {};
 
+    DEFAULT_MONAD_CONTAINER_INSTANCE(std::basic_string);
     DEFAULT_MONAD_CONTAINER_INSTANCE(std::deque);
+    DEFAULT_MONAD_CONTAINER_INSTANCE(std::forward_list);
     DEFAULT_MONAD_CONTAINER_INSTANCE(std::list);
     DEFAULT_MONAD_CONTAINER_INSTANCE(std::multiset);
     DEFAULT_MONAD_CONTAINER_INSTANCE(std::set);
-    DEFAULT_MONAD_CONTAINER_INSTANCE(std::basic_string);
     DEFAULT_MONAD_CONTAINER_INSTANCE(std::vector);
 
 #undef DEFAULT_MONAD_CONTAINER_INSTANCE
@@ -99,6 +101,15 @@ namespace fnk
         }
     };
 
+    template <typename T>
+    struct monad<fnk::maybe<T> const>  : public monad<fnk::maybe<T>> {};
+    template <typename T>
+    struct monad<fnk::maybe<T> &>      : public monad<fnk::maybe<T>> {};
+    template <typename T>
+    struct monad<fnk::maybe<T> const&> : public monad<fnk::maybe<T>> {};
+    template <typename T>
+    struct monad<fnk::maybe<T> &&>     : public monad<fnk::maybe<T>> {};
+    
     //
     // Utility functions
     //
