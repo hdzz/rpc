@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "foldable.hpp"
 #include "parser.hpp"
 #include "zip.hpp"
 
@@ -31,12 +32,10 @@ fnk::parser<int, char> natural =
 {
     .parse = [] (std::list<char> const& s)
     {
-        auto r1 = fnk::eval (digit.parse, s);
-        int p = r1.size() - 1;
-        int r2 = 0;
-        for (auto& d : r1)
-            r2 += d.first * std::pow (10, p--);
-        return std::list<std::pair<int,std::list<char>>> { std::make_pair(r2, r1.back().second) };
+        auto r = fnk::eval (digit.parse, s);
+        auto t = fnk::unzip_pair(r).first;
+        auto n = fnk::foldl ([p = t.size()-1](int a, int b) mutable { return a + (b * std::pow(10, p--)); }, 0, t);
+        return std::list<std::pair<int,std::list<char>>> { std::make_pair(n, r.back().second) };
     }
 };
 
