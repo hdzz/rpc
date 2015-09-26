@@ -41,10 +41,7 @@ namespace fnk
         struct is_monoid_instance : public std::true_type {};
     };
 
-    template <class C,
-        typename = std::enable_if_t
-            <fnk::monoid
-                <typename fnk::type_support::container_traits<C>::value_type>::is_monoid_instance::value>>
+    template <class C>
     struct default_monoid_container : public default_semigroup_container<C>
     {
         static constexpr decltype(auto) unity (void) { return C{}; }

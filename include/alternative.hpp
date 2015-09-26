@@ -30,7 +30,7 @@ namespace fnk
     template <typename T,
         typename = std::enable_if_t<fnk::monoid<T>::is_monoid_instance::value>,
         typename = std::enable_if_t<fnk::applicative_functor<T>::is_applicative_functor_instance::value>>
-    struct default_alternative : public alternative<T>
+    struct default_alternative 
     {
         static inline constexpr decltype(auto) empty (void) { return fnk::monoid<T>::unity (); } 
 
@@ -52,22 +52,6 @@ namespace fnk
     inline constexpr decltype(auto) operator| (A && l, A && r)
     {
         return fnk::alternative<A>::alt (l, r);
-    }
-
-    template <typename A,
-        typename = std::enable_if_t<fnk::alternative<A>::is_alternative_instance::value>>
-    inline constexpr decltype(auto) some (A && a)
-    {
-        return fnk::functor<A>::fmap
-            ([](auto && e, auto && l) { return l.push_front(e); },
-             fnk::applicative_functor<A>::apply (a, many(a)));
-    }
-    
-    template <typename A,
-        typename = std::enable_if_t<fnk::alternative<A>::is_alternative_instance::value>>
-    inline constexpr decltype(auto) many (A && a)
-    {
-        return fnk::alternative<A>::alt (some (a), fnk::applicative_functor<A>::pure (std::list<A>{}));
     }
 } // namespace fnk
 
