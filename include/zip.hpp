@@ -44,10 +44,33 @@ namespace detail
         }
     };
     
+    template <std::size_t I>
+    struct unpack_pair
+    {
+        template <class C>
+        static constexpr decltype(auto) unpack (C && v)
+        {
+            using PairT = typename fnk::type_support::container_traits<C>::value_type;
+            using ElmT = typename std::tuple_element<I, PairT>::type;
+            using CT   = typename fnk::type_support::container_traits<C>::template rebind<ElmT>;
+            CT out (v.size());
+            for (auto const& e : std::forward<C>(v)) {
+                out.push_back (std::get<I>(e));
+            }
+            return out;
+        }
+    };
+   
     template <class C, std::size_t ... S>
     static inline constexpr decltype(auto) unzip_helper (C && v, fnk::utility::seq<S...>)
     {
         return std::make_tuple (unpack_tuple<S>::unpack(std::forward<C>(v))...);
+    }
+
+    template <class C>
+    static inline constexpr decltype(auto) unzip_helper_pair (C && v)
+    {
+        return std::make_pair (unpack_pair<0>::unpack(std::forward<C>(v)), unpack_pair<1>::unpack(std::forward<C>(v)));
     }
 } // namespace detail
 
@@ -128,6 +151,15 @@ namespace detail
     {
         using VT = typename fnk::type_support::container_traits<C>::value_type;
         return detail::unzip_helper (std::forward<C>(v), typename utility::seq_gen<std::tuple_size<VT>::value>::type());
+    }
+    
+    template <class C,
+        typename = std::enable_if_t
+            <fnk::utility::is_specialization
+                <typename fnk::type_support::container_traits<C>::value_type, std::pair>::value>>
+    static constexpr decltype(auto) unzip_pair (C && v)
+    {
+        return detail::unzip_helper_pair (std::forward<C>(v));
     }
 } // namesapce fnk
 

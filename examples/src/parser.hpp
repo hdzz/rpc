@@ -31,7 +31,7 @@ namespace fnk
     {
         using value_type = V;
         using token_type = T;
-        std::function<std::list<std::pair<V,std::list<T>>>(std::list<T> const&)> parse;
+        std::function <std::list<std::pair<V,std::list<T>>>(std::list<T> const&)> parse;
     };
 
     template <typename T>
@@ -132,6 +132,64 @@ namespace fnk
                         r1.splice (r1.cend(), r2); 
                         return r1; 
                     }
+                }
+            }
+        };
+    }
+
+    //
+    // Sequence two parsers, but ignore the result of the left argument.
+    // Note that the value types do not have to be the same; in fact, the parser
+    // returned has the value type of the right argument.
+    //
+    template <typename P, typename Q,
+        typename = std::enable_if_t<is_parser_instance<P>::value>,
+        typename = std::enable_if_t<is_parser_instance<Q>::value>,
+        typename = std::enable_if_t<std::is_same<typename std::decay_t<P>::token_type, typename std::decay_t<Q>::token_type>::value>>
+    inline decltype(auto) ignorel (P && p, Q && q)
+    {
+        using V = typename std::decay_t<Q>::value_type;
+        using T = typename std::decay_t<P>::token_type;
+        return parser<V, T>
+        {
+            .parse = [=](std::list<T> const& s)
+            {
+                auto r1 = fnk::eval (p.parse, s);
+                if (r1.empty())
+                    return std::list<std::pair<V, std::list<T>>>{};
+                else 
+                    return fnk::eval (q.parse, r1.back().second);
+            }
+        };
+    }
+
+    //
+    // Sequence two parsers, but ignore the result of the right argument
+    // Note that the value types do not have to be the same; in fact, the parser
+    // returned has the value type of the left argument.
+    //
+    template <typename P, typename Q,
+        typename = std::enable_if_t<is_parser_instance<P>::value>,
+        typename = std::enable_if_t<is_parser_instance<Q>::value>,
+        typename = std::enable_if_t<std::is_same<typename std::decay_t<P>::token_type, typename std::decay_t<Q>::token_type>::value>>
+    inline decltype(auto) ignorer (P && p, Q && q)
+    {
+        using V = typename std::decay_t<P>::value_type;
+        using T = typename std::decay_t<P>::token_type;
+        return parser<V, T>
+        {
+            .parse = [=](std::list<T> const& s)
+            {
+                auto r1 = fnk::eval (p.parse, s);
+                if (r1.empty())
+                    return std::list<std::pair<V, std::list<T>>>{};
+                else {
+                    auto r2 = fnk::eval (q.parse, r1.back().second);
+                    if (r2.empty())
+                        return std::list<std::pair<V, std::list<T>>>{};
+                    auto back = r1.pop_back();
+                    r1.emplace_back (back.first, r2.second);
+                    return r1;
                 }
             }
         };
@@ -323,8 +381,7 @@ namespace fnk
                 auto r1 = fnk::eval (p.parse, s);
                 if (r1.empty())
                    return r1;
-                else
-                {
+                else {
                     while (true)
                     {
                         auto r2 = fnk::eval (p.parse, r1.back().second);
@@ -338,11 +395,32 @@ namespace fnk
         }; 
     }
 
+    //
+    // Right now many and same are identical, this must be
+    // corrected by implementing a standard failure behavior.
+    //
     template <typename V, typename T>
     inline decltype(auto) many (parser<V, T> const& p)
     {
-        return fnk::alternative<parser<V, T>>::alt
-            (some (p), fnk::applicative_functor<parser<V, T>>::pure (std::list<std::pair<V,std::list<T>>>{}));
+        return parser<V, T>
+        {
+            .parse = [=](std::list<T> const& s)
+            {
+                auto r1 = fnk::eval (p.parse, s);
+                if (r1.empty())
+                    return r1;
+                else {
+                    while (true)
+                    {
+                        auto r2 = fnk::eval (p.parse, r1.back().second);
+                        if (r2.empty())
+                            return r1;
+                        else
+                            r1.splice (r1.cend(), r2);
+                    }
+                }
+            }
+        }; 
     }
 
     template <typename P,
