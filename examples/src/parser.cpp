@@ -49,7 +49,8 @@ static auto const parse_text_nats  = std::list<char> { ' ', '1', '2', '3', '4', 
 
 int main (void)
 {
-    // these are identical parsers
+    // these are similar parsers that should both match everyting in
+    // `parse_text_chars`
     auto as_bs1 = fnk::sequence (fnk::some(character<'a'>), fnk::some(character<'b'>));
     auto as_bs2 = fnk::some (one_of<'a','b'>);
 
