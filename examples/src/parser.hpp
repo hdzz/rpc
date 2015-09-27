@@ -9,12 +9,16 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
+#include <iostream>
 #include <type_traits>
 #include <functional>
 #include <list>
 
+#include "algebraic.hpp"
 #include "concat.hpp"
+#include "filterable.hpp"
 #include "mappable.hpp"
+
 #include "alternative.hpp"
 #include "functor.hpp"
 #include "applicative_functor.hpp"
@@ -26,12 +30,78 @@
 
 namespace fnk
 {
+namespace detail
+{
+    struct failure
+    {
+        std::string msg;
+    };
+
+    enum
+    {
+        PARSE_VALUE = 0,
+        PARSE_FAILURE
+    };
+} // namespace detail
     template <typename V, typename T = V>
     struct parser
     {
         using value_type = V;
         using token_type = T;
-        std::function <std::list<std::pair<V,std::list<T>>>(std::list<T> const&)> parse;
+        using return_type = fnk::adt<V, detail::failure>;
+
+        template <typename U, typename S>
+        using rebind = parser<U, S>;
+
+        std::function <std::list<std::pair<return_type, std::list<T>>>(std::list<T> const&)> parse;
+       
+        static inline decltype(auto) is_value_from_pair (std::pair<return_type, std::list<T>> const& p)
+        {
+            return p.first.tindex() == detail::PARSE_VALUE;
+        }
+        
+        static inline decltype(auto) is_value (return_type const& r)
+        {
+            return r.tindex() == detail::PARSE_VALUE;
+        }
+
+        static inline decltype(auto) value_from_pair (std::pair<return_type, std::list<T>> const& p)
+        {
+            return p.first.template value<V>();
+        }
+        
+        static inline decltype(auto) value (return_type const& r)
+        {
+            return r.template value<V>();
+        }
+        
+        static inline decltype(auto) failure_message_from_pair (std::pair<return_type, std::list<T>> const& p)
+        {
+            return p.first.template value<detail::failure>();
+        }
+
+        static inline decltype(auto) failure_message (return_type const& r)
+        {
+            return r.template value<detail::failure>();
+        }
+        
+        static inline decltype(auto) values (std::list<std::pair<return_type, std::list<T>>> const& l)
+        {
+            std::list<V> out;
+            for (auto const& e : l)
+                if (is_value(e.first))
+                    fnk::type_support::container_traits<decltype(out)>::insert (out, value (e.first));
+            return out;
+        }
+ 
+        static inline decltype(auto) failure_messages (std::list<std::pair<return_type, std::list<T>>> const& l)
+        {
+            std::list<detail::failure> out;
+            for (auto const& e : l)
+                if (not is_value(e.first))
+                    fnk::type_support::container_traits<decltype(out)>::insert (out, failure_message (e.first));
+            return out;
+        }
     };
 
     template <typename T>
@@ -52,6 +122,50 @@ namespace fnk
     template <typename V, typename T>
     struct is_parser_instance<parser<V,T> &&> : public std::true_type {};
 
+    template <typename PairT,
+        typename = std::enable_if_t<fnk::utility::is_specialization<PairT, std::pair>::value>,
+        typename = std::enable_if_t<fnk::is_algebraic<typename std::tuple_element<0, std::decay_t<PairT>>::type>::value>> 
+    inline decltype(auto) is_value (PairT && p)
+    {
+        return std::forward<PairT>(p).first.tindex() == detail::PARSE_VALUE; 
+    }
+
+    template <typename PairT,
+        typename = std::enable_if_t<fnk::utility::is_specialization<PairT, std::pair>::value>,
+        typename = std::enable_if_t<fnk::is_algebraic<typename std::tuple_element<0, std::decay_t<PairT>>::type>::value>> 
+    inline decltype(auto) value (PairT && p)
+    {
+        using A = typename std::tuple_element<0, std::decay_t<PairT>>::type;
+        return std::forward<PairT>(p).first.template value<typename A::template type<detail::PARSE_VALUE>>();
+    }
+    
+    template <typename PairT,
+        typename = std::enable_if_t<fnk::utility::is_specialization<PairT, std::pair>::value>,
+        typename = std::enable_if_t<fnk::is_algebraic<typename std::tuple_element<0, std::decay_t<PairT>>::type>::value>> 
+    inline decltype(auto) failure_message (PairT && p)
+    {
+        using A = typename std::tuple_element<0, std::decay_t<PairT>>::type;
+        return std::forward<PairT>(p).first.template value<typename A::template type<detail::PARSE_FAILURE>>();
+    }
+
+    template <typename ParserT,
+        typename = std::enable_if_t<is_parser_instance<ParserT>::value>>
+    inline decltype(auto) values
+        (std::list<std::pair<typename std::decay_t<ParserT>::return_type,
+                             std::list<typename std::decay_t<ParserT>::token_type>>> const& l)
+    {
+        return std::decay_t<ParserT>::values (l);
+    }
+    
+    template <typename ParserT,
+        typename = std::enable_if_t<is_parser_instance<ParserT>::value>>
+    inline decltype(auto) failure_messages
+        (std::list<std::pair<typename std::decay_t<ParserT>::return_type,
+                             std::list<typename std::decay_t<ParserT>::token_type>>> const& l)
+    {
+        return std::decay_t<ParserT>::failure_messages (l);
+    }
+
     template <typename V, typename T, typename F,
         typename = std::enable_if_t<is_parser_instance<typename fnk::type_support::function_traits<F>::return_type>::value>>
     inline decltype(auto) bind (parser<V,T> const& p, F && f)
@@ -63,9 +177,13 @@ namespace fnk
             {
                 return fnk::concat
                     (fnk::map
-                        ([=](std::pair<V,std::list<T>> & r)
+                        ([=](std::pair<typename R::return_type, std::list<T>> & r)
                          {
-                            return fnk::eval (fnk::eval(f, r.first).parse, r.second);
+                            if (parser<V,T>::is_value(r.first))
+                                return fnk::eval (fnk::eval(f, parser<V,T>::value(r.first)).parse, r.second);
+                            else
+                                return std::list<std::pair<typename R::return_type, std::list<T>>>
+                                    { std::make_pair (detail::failure { .msg = std::string("failed") }, r.second) };
                          },
                         fnk::eval (p.parse, s)));
             }
@@ -79,15 +197,19 @@ namespace fnk
         {
             .parse = [=](std::list<T> const& s)
             {
-                return std::list<std::pair<V,std::list<T>>> { std::make_pair(v,s) };
+                return std::list<std::pair<typename parser<V,T>::return_type,std::list<T>>> { std::make_pair(v,s) };
             }
         };
     }
  
     template <typename V, typename T>
-    static auto failure = parser<V, T>
+    static auto fail = parser<V, T>
     {
-        .parse = [](std::list<T> const& /*s*/) { return std::list<std::pair<V,std::list<T>>>{}; }
+        .parse = [](std::list<T> const& s)
+        {
+            return std::list<std::pair<typename parser<V,T>::return_type, std::list<T>>>
+                { std::make_pair (detail::failure{.msg = std::string("failed")}, s) };
+        }
     };
    
     template <typename P, typename Q,
@@ -122,11 +244,11 @@ namespace fnk
             .parse = [=](std::list<T> const& s)
             {
                 auto r1 = fnk::eval (p.parse, s);
-                if (r1.empty())
+                if (not parser<V,T>::is_value(r1.front().first))
                     return r1;
                 else {
                     auto r2 = fnk::eval (q.parse, r1.back().second);
-                    if (r2.empty())
+                    if (not parser<V,T>::is_value(r2.front().first))
                        return r2;
                     else {
                         r1.splice (r1.cend(), r2); 
@@ -150,13 +272,15 @@ namespace fnk
     {
         using V = typename std::decay_t<Q>::value_type;
         using T = typename std::decay_t<P>::token_type;
+        using R = typename std::decay_t<Q>::return_type;
         return parser<V, T>
         {
             .parse = [=](std::list<T> const& s)
             {
                 auto r1 = fnk::eval (p.parse, s);
-                if (r1.empty())
-                    return std::list<std::pair<V, std::list<T>>>{};
+                if (not parser<typename std::decay_t<P>::value_type,T>::is_value(r1.front().first))
+                    return std::list<std::pair<R, std::list<T>>>
+                        { std::make_pair (detail::failure{.msg = std::string("failure")}, r1.front().second) };
                 else 
                     return fnk::eval (q.parse, r1.back().second);
             }
@@ -176,17 +300,19 @@ namespace fnk
     {
         using V = typename std::decay_t<P>::value_type;
         using T = typename std::decay_t<P>::token_type;
+        using R = typename std::decay_t<P>::return_type;
         return parser<V, T>
         {
             .parse = [=](std::list<T> const& s)
             {
                 auto r1 = fnk::eval (p.parse, s);
-                if (r1.empty())
-                    return std::list<std::pair<V, std::list<T>>>{};
+                if (not parser<V,T>::is_value(r1.front().first))
+                    return r1;
                 else {
                     auto r2 = fnk::eval (q.parse, r1.back().second);
-                    if (r2.empty())
-                        return std::list<std::pair<V, std::list<T>>>{};
+                    if (not parser<typename std::decay_t<Q>::value_type,T>::is_value(r2.front().first))
+                        return std::list<std::pair<R, std::list<T>>>
+                            { std::make_pair(detail::failure{.msg = std::string("failed")}, r2.front().second) };
                     auto back = r1.pop_back();
                     r1.emplace_back (back.first, r2.second);
                     return r1;
@@ -209,7 +335,7 @@ namespace fnk
             .parse = [=](std::list<T> const& s)
             {
                 auto r = fnk::eval (p.parse, s);
-                return r.empty() ? fnk::eval (q.parse, s) : r;
+                return r.front().first.tindex() == detail::PARSE_FAILURE ? fnk::eval (q.parse, s) : r;
             }
         };
     }
@@ -227,11 +353,15 @@ namespace fnk
             {
                 .parse = [=](std::list<T> const& s)
                 {
-                    std::list<std::pair<U, std::list<T>>> out;
+                    std::list<std::pair<typename parser<V,T>::template rebind<U,T>::return_type, std::list<T>>> out;
                     for (auto& e : fnk::eval (p.parse, s))
                     {
-                        fnk::type_support::container_traits<decltype(out)>::insert
-                            (out, std::make_pair (fnk::eval (f, e.first), e.second));
+                        if (parser<V,T>::is_value(e.first))
+                            fnk::type_support::container_traits<decltype(out)>::insert
+                                (out, std::make_pair (fnk::eval (f, parser<V,T>::value(e.first)), e.second));
+                        else
+                            fnk::type_support::container_traits<decltype(out)>::insert
+                                (out, std::make_pair (detail::failure{.msg = std::string("failure")}, e.second));
                     }
                     return out;
                 }
@@ -270,11 +400,19 @@ namespace fnk
                     std::list<std::pair<W,std::list<S>>> out;
                     for (auto const& e1 : fnk::eval (fs.parse, s))
                     {
-                        for (auto const& e2 : fnk::eval (us.parse, e1.second))
-                        {
+                        if (F::is_value (e1)) {
+                            for (auto const& e2 : fnk::eval (us.parse, e1.second))
+                            {
+                                if (U::is_value (e2))
+                                    fnk::type_support::container_traits<decltype(out)>::insert
+                                        (out, std::make_pair(fnk::eval (e1.first, e2.first), e2.second));
+                                else
+                                    fnk::type_support::container_traits<decltype(out)>::insert
+                                        (out, std::make_pair(detail::failure{.msg = std::string("failure")}, e2.second));
+                            }
+                        } else 
                             fnk::type_support::container_traits<decltype(out)>::insert
-                                (out, std::make_pair(fnk::eval (e1.first, e2.first), e2.second));
-                        }
+                                (out, std::make_pair(detail::failure{.msg = std::string("failure")}, e1.second));                
                     }
                     return out;
                 }
@@ -325,7 +463,7 @@ namespace fnk
     template <typename V, typename T>
     struct fnk::monoid<parser<V, T>> 
     {
-        static inline constexpr decltype(auto) unity (void) { return failure<V, T>; } 
+        static inline constexpr decltype(auto) unity (void) { return fail<V, T>; } 
    
         template <typename P, typename Q,
             typename = std::enable_if_t<is_parser_instance<P>::value>,
@@ -365,12 +503,16 @@ namespace fnk
     {
         .parse = [](std::list<T> const& s)
         {
-            return s.empty() ? std::list<std::pair<T,std::list<T>>>{}
-                             : std::list<std::pair<T,std::list<T>>>
+            return s.empty() ? std::list<std::pair<typename parser<T,T>::return_type,std::list<T>>>
+                                    { std::make_pair(detail::failure{.msg = std::string("expected item")}, s) }
+                             : std::list<std::pair<typename parser<T,T>::return_type,std::list<T>>>
                                     { std::make_pair(s.front(), std::list<T>(++s.begin(), s.end())) }; 
         }
     };
 
+    //
+    // One or more successful parses
+    //
     template <typename V, typename T>
     inline decltype(auto) some (parser<V, T> const& p)
     {
@@ -379,13 +521,13 @@ namespace fnk
             .parse = [=](std::list<T> const& s)
             {
                 auto r1 = fnk::eval (p.parse, s);
-                if (r1.empty())
+                if (not parser<V,T>::is_value(r1.front().first))
                    return r1;
                 else {
                     while (true)
                     {
                         auto r2 = fnk::eval (p.parse, r1.back().second);
-                        if (r2.empty())
+                        if (not parser<V, T>::is_value(r2.front().first))
                             return r1;
                         else
                             r1.splice (r1.cend(), r2);
@@ -396,8 +538,7 @@ namespace fnk
     }
 
     //
-    // Right now many and same are identical, this must be
-    // corrected by implementing a standard failure behavior.
+    // Zero or more successful parses
     //
     template <typename V, typename T>
     inline decltype(auto) many (parser<V, T> const& p)
@@ -407,13 +548,13 @@ namespace fnk
             .parse = [=](std::list<T> const& s)
             {
                 auto r1 = fnk::eval (p.parse, s);
-                if (r1.empty())
+                if (not parser<V,T>::is_value(r1.front().first))
                     return r1;
                 else {
                     while (true)
                     {
                         auto r2 = fnk::eval (p.parse, r1.back().second);
-                        if (r2.empty())
+                        if (not parser<V,T>::is_value(r2.front().first))
                             return r1;
                         else
                             r1.splice (r1.cend(), r2);
@@ -428,12 +569,21 @@ namespace fnk
     inline constexpr decltype(auto) satisfy (P && p)
     {
         using T = std::decay_t<typename fnk::type_support::function_traits<P>::template argument<0>::type>;
-        return bind
-            (item<T>,
-             [=](T t)
-             {
-                return fnk::eval(p, t) ? unit (std::move(t)) : failure<T,T>; 
-             });
+        using OT = std::list<std::pair<typename parser<T,T>::return_type, std::list<T>>>;
+        return parser<T,T>
+        {
+            .parse = [=](std::list<T> const& s)
+            {
+                if (s.empty())
+                    return OT { std::make_pair(detail::failure{.msg = std::string("no remaining tokens to parse") }, s) };
+                else {
+                    if (fnk::eval (p, s.front()))
+                        return OT { std::make_pair (s.front(), std::list<T>(++s.cbegin(), s.cend())) };
+                    else
+                        return OT { std::make_pair (detail::failure{.msg = std::string("predicate failed")}, s) };
+                }
+            } 
+        };
     }
 } // namespace fnk
 
