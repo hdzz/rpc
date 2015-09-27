@@ -30,6 +30,8 @@
 
 namespace fnk
 {
+namespace parse
+{
 namespace detail
 {
     struct failure
@@ -340,28 +342,30 @@ namespace detail
         };
     }
 
+} // namespace parse
+
     template <typename V, typename T>
-    struct fnk::functor<parser<V, T>> : public fnk::default_functor<parser, V, T>
+    struct fnk::functor<parse::parser<V, T>> : public fnk::default_functor<parse::parser, V, T>
     { 
         template <class F, typename U = typename fnk::type_support::function_traits<F>::return_type,
             typename = std::enable_if_t
                 <std::is_convertible
                     <V, typename fnk::type_support::function_traits<F>::template argument<0>::type>::value>>
-        static constexpr parser<U, T> fmap (F && f, parser<V, T> const& p)
+        static constexpr parse::parser<U, T> fmap (F && f, parse::parser<V, T> const& p)
         {
-            return parser<U, T>
+            return parse::parser<U, T>
             {
                 .parse = [=](std::list<T> const& s)
                 {
-                    std::list<std::pair<typename parser<V,T>::template rebind<U,T>::return_type, std::list<T>>> out;
+                    std::list<std::pair<typename parse::parser<V,T>::template rebind<U,T>::return_type, std::list<T>>> out;
                     for (auto& e : fnk::eval (p.parse, s))
                     {
-                        if (parser<V,T>::is_value(e.first))
+                        if (parse::parser<V,T>::is_value(e.first))
                             fnk::type_support::container_traits<decltype(out)>::insert
-                                (out, std::make_pair (fnk::eval (f, parser<V,T>::value(e.first)), e.second));
+                                (out, std::make_pair (fnk::eval (f, parse::parser<V,T>::value(e.first)), e.second));
                         else
                             fnk::type_support::container_traits<decltype(out)>::insert
-                                (out, std::make_pair (detail::failure{.msg = std::string("failure")}, e.second));
+                                (out, std::make_pair (parse::detail::failure{.msg = std::string("failure")}, e.second));
                     }
                     return out;
                 }
@@ -370,16 +374,16 @@ namespace detail
     };
 
     template <typename V, typename T>
-    struct fnk::functor<parser<V, T> const> : public fnk::functor<parser<V, T>> {};
+    struct fnk::functor<parse::parser<V, T> const> : public fnk::functor<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::functor<parser<V, T> &> : public fnk::functor<parser<V, T>> {};
+    struct fnk::functor<parse::parser<V, T> &> : public fnk::functor<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::functor<parser<V, T> const&> : public fnk::functor<parser<V, T>> {};
+    struct fnk::functor<parse::parser<V, T> const&> : public fnk::functor<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::functor<parser<V, T> &&> : public fnk::functor<parser<V, T>> {};
+    struct fnk::functor<parse::parser<V, T> &&> : public fnk::functor<parse::parser<V, T>> {};
     
     template <typename V, typename T>
-    struct fnk::applicative_functor<parser<V, T>> : public fnk::default_applicative_functor<parser<V, T>>
+    struct fnk::applicative_functor<parse::parser<V, T>> : public fnk::default_applicative_functor<parse::parser<V, T>>
     {
         static inline constexpr decltype(auto) pure (V && v)
         {
@@ -387,13 +391,13 @@ namespace detail
         }
 
         template <class F, typename U,
-            typename = std::enable_if_t<is_parser_instance<F>::value>,
-            typename = std::enable_if_t<is_parser_instance<U>::value>>
+            typename = std::enable_if_t<parse::is_parser_instance<F>::value>,
+            typename = std::enable_if_t<parse::is_parser_instance<U>::value>>
         static inline constexpr decltype(auto) apply (F const& fs, U const& us)
         {
             using W = typename std::decay_t<F>::value_type;
             using S = typename std::decay_t<F>::token_type; 
-            return parser<W, S>
+            return parse::parser<W, S>
             {
                 .parse = [=](std::list<S> const& s)
                 {
@@ -408,11 +412,11 @@ namespace detail
                                         (out, std::make_pair(fnk::eval (e1.first, e2.first), e2.second));
                                 else
                                     fnk::type_support::container_traits<decltype(out)>::insert
-                                        (out, std::make_pair(detail::failure{.msg = std::string("failure")}, e2.second));
+                                        (out, std::make_pair(parse::detail::failure{.msg = std::string("failure")}, e2.second));
                             }
                         } else 
                             fnk::type_support::container_traits<decltype(out)>::insert
-                                (out, std::make_pair(detail::failure{.msg = std::string("failure")}, e1.second));                
+                                (out, std::make_pair(parse::detail::failure{.msg = std::string("failure")}, e1.second));                
                     }
                     return out;
                 }
@@ -421,30 +425,30 @@ namespace detail
     };
 
     template <typename V, typename T>
-    struct fnk::applicative_functor<parser<V, T> const> : public fnk::applicative_functor<parser<V, T>> {};
+    struct fnk::applicative_functor<parse::parser<V, T> const> : public fnk::applicative_functor<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::applicative_functor<parser<V, T> &> : public fnk::applicative_functor<parser<V, T>> {};   
+    struct fnk::applicative_functor<parse::parser<V, T> &> : public fnk::applicative_functor<parse::parser<V, T>> {};   
     template <typename V, typename T>
-    struct fnk::applicative_functor<parser<V, T> const&> : public fnk::applicative_functor<parser<V, T>> {};
+    struct fnk::applicative_functor<parse::parser<V, T> const&> : public fnk::applicative_functor<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::applicative_functor<parser<V, T> &&> : public fnk::applicative_functor<parser<V, T>> {};
+    struct fnk::applicative_functor<parse::parser<V, T> &&> : public fnk::applicative_functor<parse::parser<V, T>> {};
     
     template <typename V, typename T>
-    struct fnk::alternative<parser<V, T>> : public fnk::default_alternative<parser<V, T>> {};
+    struct fnk::alternative<parse::parser<V, T>> : public fnk::default_alternative<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::alternative<parser<V, T> const> : public fnk::alternative<parser<V, T>> {};
+    struct fnk::alternative<parse::parser<V, T> const> : public fnk::alternative<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::alternative<parser<V, T> &> : public fnk::alternative<parser<V, T>> {};
+    struct fnk::alternative<parse::parser<V, T> &> : public fnk::alternative<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::alternative<parser<V, T> const&> : public fnk::alternative<parser<V, T>> {};
+    struct fnk::alternative<parse::parser<V, T> const&> : public fnk::alternative<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::alternative<parser<V, T> &&> : public fnk::alternative<parser<V, T>> {};
+    struct fnk::alternative<parse::parser<V, T> &&> : public fnk::alternative<parse::parser<V, T>> {};
     
     template <typename V, typename T>
-    struct fnk::monad<parser<V, T>> : public fnk::default_monad<parser<V, T>>
+    struct fnk::monad<parse::parser<V, T>> : public fnk::default_monad<parse::parser<V, T>>
     {
         template <class F, typename P,
-            typename = std::enable_if_t<std::is_same<std::decay_t<P>, parser<V, T>>::value>>
+            typename = std::enable_if_t<std::is_same<std::decay_t<P>, parse::parser<V, T>>::value>>
         static inline constexpr decltype(auto) mbind (P && p, F && f)
         {
             return bind (std::forward<P>(p), std::forward<F>(f));
@@ -452,22 +456,22 @@ namespace detail
     };
 
     template <typename V, typename T>
-    struct fnk::monad<parser<V, T> const> : public fnk::monad<parser<V, T>> {};
+    struct fnk::monad<parse::parser<V, T> const> : public fnk::monad<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::monad<parser<V, T> &> : public fnk::monad<parser<V, T>> {};
+    struct fnk::monad<parse::parser<V, T> &> : public fnk::monad<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::monad<parser<V, T> const&> : public fnk::monad<parser<V, T>> {};
+    struct fnk::monad<parse::parser<V, T> const&> : public fnk::monad<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::monad<parser<V, T> &&> : public fnk::monad<parser<V, T>> {};
+    struct fnk::monad<parse::parser<V, T> &&> : public fnk::monad<parse::parser<V, T>> {};
     
     template <typename V, typename T>
-    struct fnk::monoid<parser<V, T>> 
+    struct fnk::monoid<parse::parser<V, T>> 
     {
-        static inline constexpr decltype(auto) unity (void) { return fail<V, T>; } 
+        static inline constexpr decltype(auto) unity (void) { return parse::fail<V, T>; } 
    
         template <typename P, typename Q,
-            typename = std::enable_if_t<is_parser_instance<P>::value>,
-            typename = std::enable_if_t<is_parser_instance<Q>::value>,
+            typename = std::enable_if_t<parse::is_parser_instance<P>::value>,
+            typename = std::enable_if_t<parse::is_parser_instance<Q>::value>,
             typename = std::enable_if_t
                 <std::is_same<typename std::decay_t<P>::value_type, typename std::decay_t<Q>::value_type>::value>,
             typename = std::enable_if_t
@@ -481,23 +485,25 @@ namespace detail
     };
 
     template <typename V, typename T>
-    struct fnk::monoid<parser<V, T> const> : public fnk::monoid<parser<V, T>> {};
+    struct fnk::monoid<parse::parser<V, T> const> : public fnk::monoid<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::monoid<parser<V, T> &> : public fnk::monoid<parser<V, T>> {};
+    struct fnk::monoid<parse::parser<V, T> &> : public fnk::monoid<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::monoid<parser<V, T> const&> : public fnk::monoid<parser<V, T>> {};
+    struct fnk::monoid<parse::parser<V, T> const&> : public fnk::monoid<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::monoid<parser<V, T> &&> : public fnk::monoid<parser<V, T>> {};
+    struct fnk::monoid<parse::parser<V, T> &&> : public fnk::monoid<parse::parser<V, T>> {};
     
     template <typename V, typename T>
-    struct fnk::additive_monad<parser<V, T> const> : public fnk::additive_monad<parser<V, T>> {};
+    struct fnk::additive_monad<parse::parser<V, T> const> : public fnk::additive_monad<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::additive_monad<parser<V, T> &> : public fnk::additive_monad<parser<V, T>> {};
+    struct fnk::additive_monad<parse::parser<V, T> &> : public fnk::additive_monad<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::additive_monad<parser<V, T> const&> : public fnk::additive_monad<parser<V, T>> {};
+    struct fnk::additive_monad<parse::parser<V, T> const&> : public fnk::additive_monad<parse::parser<V, T>> {};
     template <typename V, typename T>
-    struct fnk::additive_monad<parser<V, T> &&> : public fnk::additive_monad<parser<V, T>> {};
-    
+    struct fnk::additive_monad<parse::parser<V, T> &&> : public fnk::additive_monad<parse::parser<V, T>> {};
+
+namespace parse
+{
     template <typename T>
     auto item = parser<T, T>
     {
@@ -585,6 +591,7 @@ namespace detail
             } 
         };
     }
+} // namespace parse
 } // namespace fnk
 
 #endif // ifndef PARSER_HPP
