@@ -26,4 +26,5 @@ clean:
 
 clean-all:
 	@make clean-all -C $(test_dir)
+	@make clean-all -C $(examples_dir)
 
