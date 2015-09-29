@@ -38,7 +38,8 @@ namespace detail
         failure (void) : msg("failure") {}
         failure (std::string const& s) : msg(s) {}
         failure (std::string && s) : msg(s) {}
-
+        failure (failure const& f) : msg(f.msg) {}
+    
         std::string msg;
     };
 
@@ -320,31 +321,50 @@ namespace detail
         typename = std::enable_if_t<is_parser_instance<P>::value>,
         typename = std::enable_if_t<is_parser_instance<Q>::value>,
         typename = 
-            std::enable_if_t<std::is_same<typename parser_traits<P>::value_type, typename parser_traits<Q>::value_type>::value>,
+            std::enable_if_t<std::is_same<typename parser_traits<P>::range_type, typename parser_traits<Q>::range_type>::value>,
         typename = 
-            std::enable_if_t<std::is_same<typename parser_traits<P>::token_type, typename parser_traits<Q>::token_type>::value>>
+            std::enable_if_t<std::is_same<typename parser_traits<P>::value_type, typename parser_traits<Q>::token_type>::value>>
     inline decltype(auto) sequence (P && p, Q && q)
     {
-        using V  = typename parser_traits<P>::value_type;
-        using It = typename parser_traits<P>::range_type::iter_type;
-        return parser<V, It>
+        using PV = typename parser_traits<P>::value_type;
+        using PI = typename parser_traits<P>::range_type::iter_type;
+        using QV = typename parser_traits<Q>::value_type;
+        using QR = typename parser_traits<Q>::result_type;
+        return parser<QV, PI>
         {
-            .parse = [=](typename parser<V, It>::range_type const& r)
+            .parse = [=](typename parser<QV, PI>::range_type const& r)
             {
                 auto l1 = fnk::eval (p.parse, r);
-                if (parser<V, It>::is_failure (l1.front()))
-                    return l1;
+                std::list<std::list<QR>> preout;
+                for (auto const& e : l1)
+                {
+                    if (parser<PV,PI>::is_result (e))
+                        fnk::type_support::container_traits<std::list<std::list<QR>>>::insert
+                            (preout, fnk::eval (q.parse, parser<PV,PI>::result_range (e)));
+                    else
+                        fnk::type_support::container_traits<std::list<std::list<QR>>>::insert
+                            (preout, std::list<QR>{detail::failure{parser<PV,PI>::failure_message(e)}});
+                }
+                return fnk::concat (preout);
+                /*if (parser<PV, PI>::is_failure (l1.front()))
+                    return std::list<QR> { detail::failure{parser<PV,PI>::failure_message(l1.front()).msg} };
                 else {
-                    auto l2 = fnk::eval (q.parse, parser<V, It>::result_range (l1.back()));
-                    if (parser<V, It>::is_failure (l2.front()))
+                    auto l2 = fnk::eval (q.parse, parser<PV, PI>::result_range (l1.back()));
+                    if (parser<QV, QI>::is_failure (l2.front()))
                        return l2;
                     else {
                         l1.splice (l1.cend(), l2); 
                         return l1; 
                     }
-                }
+                }*/
             }
         };
+    }
+    
+    template <typename P, typename ... Qs, typename = std::enable_if_t<sizeof...(Qs) >= 2>>
+    inline decltype(auto) sequence (P && p, Qs && ... qs)
+    {
+        return sequence (p, sequence (qs...));    
     }
 
     //
@@ -385,28 +405,31 @@ namespace detail
         typename = std::enable_if_t<is_parser_instance<P>::value>,
         typename = std::enable_if_t<is_parser_instance<Q>::value>,
         typename = std::enable_if_t
-            <std::is_same<typename parser_traits<P>::token_type, typename parser_traits<Q>::token_type>::value>>
+            <std::is_same<typename parser_traits<P>::value_type, typename parser_traits<Q>::token_type>::value>>
     inline decltype(auto) ignorer (P && p, Q && q)
     {
         using PV = typename parser_traits<P>::value_type;
-        using PT = typename parser_traits<P>::token_type;
+        using PI = typename parser_traits<P>::range_type::iter_type;
         using PR = typename parser_traits<P>::result_type;
         using QV = typename parser_traits<Q>::value_type;
-        using QT = typename parser_traits<Q>::token_type;
-        return parser<PV, PT>
+        using QI = typename parser_traits<Q>::range_type::iter_type;
+        return parser<PV, PI>
         {
-            .parse = [=](range<PT> const& r)
+            .parse = [=](typename parser<PV, PI>::range_type const& r)
             {
                 auto l1 = fnk::eval (p.parse, r);
-                if (parser<PV, PT>::is_failure (l1.front()))
+                if (parser<PV, PI>::is_failure (l1.front()))
                     return std::list<PR> { detail::failure{} };
                 else {
-                    auto l2 = fnk::eval (q.parse, parser<PV,PT>::result_range(l1.back()));
-                    if (parser<QV, QT>::is_failure (l2.front()))
+                    auto l2 = fnk::eval (q.parse, parser<PV,PI>::result_range (l1.back()));
+                    if (parser<QV, QI>::is_failure (l2.front()))
                         return std::list<PR> { detail::failure{} };
                     else {
-                        auto l1_back = l1.pop_back();
-                        l1.emplace_back (parser<PV,PT>::result_value(l1_back), parser<QV,QT>::result_range(l2.back()));
+                        auto l1_back = l1.back();
+                        l1.pop_back();
+                        l1.push_back
+                            (std::make_pair
+                                (parser<PV,PI>::result_value (l1_back), parser<QV,QI>::result_range (l2.back())));
                         return l1;
                     }
                 }
@@ -424,7 +447,7 @@ namespace detail
     inline decltype(auto) option (P && p, Q && q)
     {
         using V  = typename parser_traits<P>::value_type;
-        using It = typename parser_traits<P>::token_type;
+        using It = typename parser_traits<P>::range_type::iter_type;
         return parser<V, It>
         {
             .parse = [=](typename parser<V, It>::range_type const& r)
@@ -434,7 +457,13 @@ namespace detail
             }
         };
     }
-
+    
+    template <typename P, typename ... Qs, typename = std::enable_if_t<sizeof...(Qs) >= 2>,
+        typename = std::enable_if_t<is_parser_instance<P>::value>>
+    inline decltype(auto) option (P && p, Qs && ... qs)
+    {
+        return option (p, option (qs...));
+    }
 } // namespace parse
 
     template <typename V, typename It>
@@ -492,7 +521,7 @@ namespace detail
         static inline constexpr decltype(auto) apply (F const& fs, U const& us)
         {
             using W = typename parse::parser_traits<F>::value_type;
-            using S = typename parse::parser_traits<F>::token_type; 
+            using S = typename parse::parser_traits<F>::range_type::iter_type; 
             return parse::parser<W, S>
             {
                 .parse = [=](parse::range<S> const& r)
@@ -638,6 +667,34 @@ namespace parse
     }
 
     //
+    // Exactly n successful parses
+    //
+    template <typename V, typename It>
+    inline decltype(auto) some (parser<V, It> const& p, std::size_t const n)
+    {
+        return parser<V, It>
+        {
+            .parse = [=](typename parser<V, It>::range_type const& r)
+            {
+                auto l1 = eval (p.parse, r);
+                if (parser<V, It>::is_failure (l1.front()))
+                    return std::list<typename parser<V, It>::result_type>{ detail::failure{"expected at least one result"} };
+                else {
+                    for (auto i = 1; i < n; ++i) // run n-1 more times
+                    {
+                        auto l2 = eval (p.parse, parser<V, It>::result_range(l1.back()));
+                        if (parser<V, It>::is_failure (l2.front()))
+                            return l1;
+                        else
+                            l1.splice (l1.cend(), l2);
+                    }
+                    return l1;
+                } 
+            }
+        }; 
+    }
+
+    //
     // Zero or more successful parses
     //
     template <typename V, typename It>
@@ -659,6 +716,38 @@ namespace parse
                         else
                             l1.splice (l1.cend(), l2);
                     }
+                }
+            }
+        }; 
+    }
+
+    //
+    // Zero or more successful parses, but at most n successes
+    //
+    template <typename V, typename It>
+    inline decltype(auto) manyto (parser<V, It> const& p, std::size_t const n)
+    {
+        return parser<V, It>
+        {
+            .parse = [=](typename parser<V, It>::range_type const& r)
+            {
+                auto l1 = eval (p.parse, r);
+                if (parser<V, It>::is_failure (l1.front()))
+                    return std::list<typename parser<V, It>::result_type>{ std::make_pair (detail::empty_result<V>{}, r) };
+                else {
+                    for (auto i = 0; i < n; ++i) // run n-1 more times
+                    {
+                        auto l2 = eval (p.parse, parser<V, It>::result_range(l1.back()));
+                        if (parser<V, It>::is_failure (l2.front()))
+                            return l1;
+                        else
+                            l1.splice (l1.cend(), l2);
+                    }
+                    if (parser<V,It>::is_result (eval (p.parse, parser<V, It>::result_range(l1.back())))) // check that n+1 runs fails
+                        return std::list<typename parser<V, It>::result_type>
+                            { detail::failure {"expected at most " + std::to_string(n) + " matches"} };
+                    else
+                        return l1;
                 }
             }
         }; 
