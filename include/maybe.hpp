@@ -43,13 +43,17 @@ namespace fnk
         template <class T>
         struct type_storage_default
         {
-            std::aligned_storage_t<sizeof(T), alignof(T)> data;
+            alignas(alignof(T)) unsigned char data[sizeof(T)];
             
             constexpr type_storage_default (void) noexcept = default;
+            constexpr type_storage_default (T && t) noexcept(noexcept(T(t)))
+            {
+                new (reinterpret_cast<void*> (data)) T(t);
+            }
             template <class ... Args>
-            constexpr type_storage_default (Args && ... args)
-            { 
-                *reinterpret_cast<T*> (&data) = T(utility::forward_constexpr<Args> (args)...);
+            constexpr type_storage_default (Args && ... args) noexcept(noexcept(T(utility::forward_constexpr<Args>(args)...)))
+            {
+                new (reinterpret_cast<void*> (data)) T(utility::forward_constexpr<Args> (args)...);
             }
             
             ~type_storage_default (void) noexcept {}
@@ -58,13 +62,17 @@ namespace fnk
         template <class T>
         struct type_storage_trivial
         {
-            std::aligned_storage_t<sizeof(T), alignof(T)> data;
-            
+            alignas(alignof(T)) unsigned char data[sizeof(T)];
+     
             constexpr type_storage_trivial (void) noexcept = default;
+            constexpr type_storage_trivial (T && t) noexcept(noexcept(T(t)))
+            {
+                new (reinterpret_cast<void*> (data)) T(t);
+            }
             template <class ... Args>
-            constexpr type_storage_trivial (Args && ... args)
+            constexpr type_storage_trivial (Args && ... args) noexcept(noexcept(T(utility::forward_constexpr<Args>(args)...)))
             { 
-                *reinterpret_cast<T*> (&data) = T(utility::forward_constexpr<Args> (args)...);
+                new (reinterpret_cast<void*> (data)) T(utility::forward_constexpr<Args> (args)...);
             }
             
             ~type_storage_trivial (void) noexcept = default;
@@ -88,7 +96,7 @@ namespace fnk
     public:
         ~maybe_default (void) noexcept
         {
-            if (init) { reinterpret_cast<T> (storage.data).T::~T(); }
+            if (init) { reinterpret_cast<T*> (storage.data)->T::~T(); }
         } 
 
         void clear (void) noexcept
@@ -96,6 +104,12 @@ namespace fnk
             if (init)
                 addressof()->T::~T();
             init = false;
+        }
+
+        void set (T && t) noexcept (noexcept(T(t)))
+        {
+            new (reinterpret_cast<void*> (addressof())) T(t);
+            init = true;
         }
 
         template <class ... Args>
@@ -120,8 +134,8 @@ namespace fnk
         inline constexpr T&&      operator* (void) &&     { return value(); }
         inline constexpr T const& operator* (void) const& { return value(); }
  
-        inline constexpr T*       addressof (void) noexcept       { return reinterpret_cast<T*> (std::addressof(storage.data)); }
-        inline constexpr T const* addressof (void) const noexcept { return reinterpret_cast<T const*> (std::addressof(storage.data)); }
+        inline constexpr T*       addressof (void) noexcept       { return reinterpret_cast<T*> (storage.data); }
+        inline constexpr T const* addressof (void) const noexcept { return reinterpret_cast<T const*> (storage.data); }
 
         inline constexpr T*       operator& (void) noexcept       { return addressof(); }
         inline constexpr T const* operator& (void) const noexcept { return addressof(); }
@@ -153,6 +167,12 @@ namespace fnk
             init = false; 
         }
 
+        void set (T && t) noexcept (noexcept(T(t)))
+        {
+            new (reinterpret_cast<void*> (addressof())) T(t);
+            init = true;
+        }
+
         template <class ... Args>
         void set (Args&& ... args) noexcept (noexcept(T(std::forward<Args> (args)...)))
         {
@@ -175,8 +195,8 @@ namespace fnk
         inline constexpr T&&      operator* (void) &&     { return value(); }
         inline constexpr T const& operator* (void) const& { return value(); }
 
-        inline constexpr T*       addressof (void) noexcept       { return reinterpret_cast<T*> (std::addressof(storage.data)); }
-        inline constexpr T const* addressof (void) const noexcept { return reinterpret_cast<T const*> (std::addressof(storage.data)); }
+        inline constexpr T*       addressof (void) noexcept       { return reinterpret_cast<T*> (storage.data); }
+        inline constexpr T const* addressof (void) const noexcept { return reinterpret_cast<T const*> (storage.data); }
 
         inline constexpr T*       operator& (void) noexcept       { return addressof(); }
         inline constexpr T const* operator& (void) const noexcept { return addressof(); }

@@ -53,9 +53,9 @@ namespace detail
         inline constexpr U const& operator* (void) const& { return value<U>(); }
         
         template <typename U>
-        inline constexpr U*       addressof (void) noexcept       { return reinterpret_cast<U*> (std::addressof(data)); }
+        inline constexpr U*       addressof (void) noexcept       { return reinterpret_cast<U*> (data); }
         template <typename U>
-        inline constexpr U const* addressof (void) const noexcept { return reinterpret_cast<U const*> (std::addressof(data)); }
+        inline constexpr U const* addressof (void) const noexcept { return reinterpret_cast<U const*> (data); }
         
         template <typename U>
         inline constexpr U*       operator& (void) noexcept       { return addressof<U>(); }
@@ -63,7 +63,7 @@ namespace detail
         inline constexpr U const* operator& (void) const noexcept { return addressof<U>(); }
     
     private: 
-        alignas (std::max({alignof(T), alignof(Ts)...})) char data [std::max({sizeof(T), sizeof(Ts)...})];
+        alignas (std::max({alignof(T), alignof(Ts)...})) unsigned char data [std::max({sizeof(T), sizeof(Ts)...})];
     };
 } // namespace detail
 
@@ -79,7 +79,7 @@ namespace detail
             typename = std::enable_if_t<fnk::utility::any_true(std::is_same<U,T>::value, std::is_same<U,Ts>::value...)>>
         adt (U && u) : tindex_ (utility::type_to_index<U, T, Ts...>::value)
         {
-            *reinterpret_cast<U*> (storage.template addressof<U>()) = std::move (std::forward<U>(u));
+            new (reinterpret_cast<void*> (storage.template addressof<U>())) U(std::forward<U>(u));
         }
         
         ~adt (void) noexcept = default;
@@ -88,7 +88,7 @@ namespace detail
             typename = std::enable_if_t<fnk::utility::any_true(std::is_same<U,T>::value, std::is_same<U,Ts>::value...)>>
         static decltype(auto) emplace (U && u) noexcept (std::is_nothrow_move_constructible<U>::value)
         {
-            return adt<T, Ts...>::adt (U(std::forward<U>(u))); 
+            return adt (U(std::forward<U>(u))); 
         }
 
         template <typename U,
@@ -96,7 +96,7 @@ namespace detail
             typename ... Args>
         static decltype(auto) emplace (Args && ... args) noexcept (std::is_nothrow_constructible<U, Args...>::value)
         {
-            return adt<T, Ts...>::adt (U(std::forward<Args>(args)...)); 
+            return adt (U(std::forward<Args>(args)...)); 
         }
 
         template <typename U,
@@ -106,7 +106,7 @@ namespace detail
         static decltype(auto) emplace (std::initializer_list<A> const& il, Args && ... args)
             noexcept (std::is_nothrow_constructible<U, decltype(il), Args...>::value) 
         {
-            return adt<T, Ts...>::adt (U(il, std::forward<Args>(args)...));
+            return adt (U(il, std::forward<Args>(args)...));
         }
 
         template <typename U,
@@ -166,7 +166,7 @@ namespace detail
             typename = std::enable_if_t<fnk::utility::any_true(std::is_same<U,T>::value, std::is_same<U,Ts>::value...)>>
         constexpr decltype(auto) operator= (U && u) noexcept (std::is_nothrow_move_assignable<U>::value)
         {
-            *reinterpret_cast<U*> (storage.template addressof<U>()) = std::move (std::forward<U>(u));
+            new (reinterpret_cast<void*> (storage.template addressof<U>())) U(std::forward<U>(u));
             return *this;
         }
 

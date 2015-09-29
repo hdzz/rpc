@@ -9,7 +9,7 @@ examples_dir=$(base)/examples
 
 CXX=clang++
 std=c++14
-cxxflags=$(std) $(OPTFLAGS) -Werror -Wall -Wextra -Wshadow -Wstrict-aliasing -Wcast-align
+cxxflags=$(std) $(OPTFLAGS) -Werror -Wall -Wextra -Wshadow -Wstrict-aliasing -Wcast-align -fpermissive
 
 .PHONY: all test examples clean clean-all
 

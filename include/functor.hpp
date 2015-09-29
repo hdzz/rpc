@@ -36,7 +36,7 @@ namespace fnk
         template <class F, typename T_, typename U = typename fnk::type_support::function_traits<F>::return_type,
             typename = std::enable_if_t<fnk::functor<U>::is_functor_instance::value>,
             typename = std::enable_if_t<std::is_same<T<As...>, T_>::value>>
-        static constexpr rebind<U> fmap (F &&, T_ &&);
+        static constexpr decltype(auto) fmap (F &&, T_ &&);
 
         struct is_functor_instance : public std::true_type {};
     }; 
