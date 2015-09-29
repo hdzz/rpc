@@ -79,7 +79,7 @@ namespace detail
             typename = std::enable_if_t<std::is_base_of<iter_type, It>::value>>
         constexpr range (It const& s, It const& e) noexcept : valid(0 < std::distance(s, e)), start(s), end(e) {}
 
-        inline constexpr decltype(auto) head (void) const noexcept(noexcept(*start)) { return *start; }
+        inline constexpr decltype(auto) head (void) const noexcept(noexcept(*std::declval<const iter_type>())) { return *start; }
         
         inline constexpr decltype(auto) tail (void) const noexcept { return range (std::next(start), end); }
     
