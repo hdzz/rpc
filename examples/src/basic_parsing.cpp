@@ -44,7 +44,7 @@ auto alphas = fnk::parse::some (alpha);
 
 auto lower = fnk::parse::satisfy<fnk::parse::iter_type<char>> ([](char a) -> bool { return std::islower(a); }, "expected lower case");
 
-auto upper = fnk::parse::satisfy<fnk::parse::iter_type<char>> ([](char a) -> bool { return std::islower(a); }, "expected upper case");
+auto upper = fnk::parse::satisfy<fnk::parse::iter_type<char>> ([](char a) -> bool { return std::isupper(a); }, "expected upper case");
 
 auto is_digit = fnk::parse::satisfy<fnk::parse::iter_type<char>> ([](char a) { return '0' <= a && a <= '9'; }, "expected digit 0-9");
 
