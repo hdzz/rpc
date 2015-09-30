@@ -26,8 +26,8 @@ int main (void)
             inputs.push_back (data_t::emplace<std::string>(s));
     }
  
-    auto int_entry = [] (data_t const& e) { return data_t::index<int>::value         == e.tindex(); };   
-    auto str_entry = [] (data_t const& e) { return data_t::index<std::string>::value == e.tindex(); }; 
+    auto int_entry = [] (data_t const& e) { return data_t::index<int>::value         == e.type_index(); };   
+    auto str_entry = [] (data_t const& e) { return data_t::index<std::string>::value == e.type_index(); }; 
 
     auto square = [] (data_t const& e) { return e.template value<int>() * e.template value<int>(); };
 

@@ -115,22 +115,22 @@ namespace detail
        
         static inline decltype(auto) is_result (result_type const& r)
         {
-            return r.tindex() == detail::PARSE_RESULT || r.tindex() == detail::PARSE_EMPTY_RESULT;
+            return r.type_index() == detail::PARSE_RESULT || r.type_index() == detail::PARSE_EMPTY_RESULT;
         }
         
         static inline decltype(auto) is_value_result (result_type const& r)
         {
-            return r.tindex() == detail::PARSE_RESULT;
+            return r.type_index() == detail::PARSE_RESULT;
         }
         
         static inline decltype(auto) is_empty_result (result_type const& r)
         {
-            return r.tindex() == detail::PARSE_EMPTY_RESULT;
+            return r.type_index() == detail::PARSE_EMPTY_RESULT;
         }
 
         static inline decltype(auto) is_failure (result_type const& r)
         {
-            return r.tindex() == detail::PARSE_FAILURE;
+            return r.type_index() == detail::PARSE_FAILURE;
         }
 
         static inline decltype(auto) result (result_type const& r)

@@ -71,13 +71,13 @@ namespace detail
     struct adt
     {
     public:
-        adt (void) : tindex_(0) { static_assert (sizeof(T) == 0, "cannot default construct algebraic data type"); }
+        adt (void) : type_index_(0) { static_assert (sizeof(T) == 0, "cannot default construct algebraic data type"); }
 
         adt (adt<T, Ts...> const&) = default;
 
         template <typename U,
             typename = std::enable_if_t<fnk::utility::any_true(std::is_same<U,T>::value, std::is_same<U,Ts>::value...)>>
-        adt (U && u) : tindex_ (utility::type_to_index<U, T, Ts...>::value)
+        adt (U && u) : type_index_ (utility::type_to_index<U, T, Ts...>::value)
         {
             new (reinterpret_cast<void*> (storage.template addressof<U>())) U(std::forward<U>(u));
         }
@@ -170,9 +170,9 @@ namespace detail
             return *this;
         }
 
-        inline decltype(auto) tindex (void) const noexcept
+        inline decltype(auto) type_index (void) const noexcept
         {
-            return tindex_;
+            return type_index_;
         }
 
         template <typename U>
@@ -191,7 +191,7 @@ namespace detail
             typename = std::enable_if_t<is_adt_type<U>::value>>
         using index = fnk::utility::type_to_index<U, T, Ts...>;
     private:
-        std::size_t const tindex_;
+        std::size_t const type_index_;
         detail::adt_internal_storage<T, Ts...> storage;
     };
 
