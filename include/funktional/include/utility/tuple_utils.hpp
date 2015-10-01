@@ -9,8 +9,8 @@
 #ifndef TUPLE_UTILS_HPP
 #define TUPLE_UTILS_HPP
 
-#include "type_support/function_traits.hpp"
-#include "utility/type_utils.hpp"
+#include "type_utils.hpp"
+#include "../type_support/function_traits.hpp"
 
 namespace fnk
 {
