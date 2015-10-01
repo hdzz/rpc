@@ -9,7 +9,6 @@
 #include <iostream>
 #include <regex>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "core/range.hpp"
@@ -18,10 +17,6 @@
 #include "basic/atom_parsers.hpp"
 #include "basic/numeric_parsers.hpp"
 #include "regex/regex_parsers.hpp"
-
-#include "funktional/include/foldable.hpp"
-#include "funktional/include/zip.hpp"
-#include "funktional/include/utility/bool_utils.hpp"
 
 template <typename T>
 using iter_type = typename std::basic_string<T>::const_iterator;
