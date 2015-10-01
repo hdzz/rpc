@@ -1,0 +1,6 @@
+*.out
+*.log
+*.aux
+*.DS_Store
+*.nvimrc.custom
+
