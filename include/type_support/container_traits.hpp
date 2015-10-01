@@ -18,7 +18,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "utility/type_utils.hpp"
+#include "../utility/type_utils.hpp"
 
 namespace fnk
 {
