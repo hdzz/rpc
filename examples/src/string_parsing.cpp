@@ -16,7 +16,7 @@
 #include "core/combinators.hpp"
 #include "basic/atom_parsers.hpp"
 #include "basic/numeric_parsers.hpp"
-#include "regex/regex_parsers.hpp"
+#include "basic/regex_parsers.hpp"
 
 template <typename T>
 using iter_type = typename std::basic_string<T>::const_iterator;
@@ -26,8 +26,8 @@ using strparser = rpc::core::parser<iter_type<T>, V>;
 
 auto as_bs = rpc::core::some (rpc::basic::one_of<iter_type<char>>({'a','b'}));
 
-auto rx_as = rpc::regex::regexparser<iter_type<char>> (std::regex("a+"));
-auto rx_as_bs = rpc::regex::regexparser<iter_type<char>> (std::regex("a+b+"));
+auto rx_as = rpc::basic::regexparser<iter_type<char>> (std::regex("a+"));
+auto rx_as_bs = rpc::basic::regexparser<iter_type<char>> (std::regex("a+b+"));
 
 static auto const parse_text_chars = std::string ("aabbb");
 static auto const parse_text_ws    = std::string (" \n\t \r\v");

@@ -88,6 +88,8 @@ namespace detail
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto number_str = rpc::core::option (natural_str<It,CharT>, minus_natural_str<It,CharT>, plus_natural_str<It,CharT>);
+
+
 } // namespace detail
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, typename IntT = unsigned int, int base = 0>
     auto todigit = fnk::functor<rpc::core::parser<It, CharT>>::fmap

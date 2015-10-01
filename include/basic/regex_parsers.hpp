@@ -21,7 +21,7 @@
 
 namespace rpc
 {
-namespace regex
+namespace basic
 {
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     inline constexpr decltype(auto) regexparser (std::basic_regex<CharT> const& rx)
@@ -62,7 +62,7 @@ namespace regex
             }
         };
     }
-} // namespace regex
+} // namespace basic
 } // namesapce rpc
 
 #endif
