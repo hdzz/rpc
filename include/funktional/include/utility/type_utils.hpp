@@ -105,6 +105,7 @@ namespace utility
     template <typename E>
     struct is_well_formed : public detail::is_well_formed<E> {};
 
+
     template <class T>
     inline constexpr T&& forward_constexpr (T & t) noexcept { return static_cast<T&&> (t); }
 
