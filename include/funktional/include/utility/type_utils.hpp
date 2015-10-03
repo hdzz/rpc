@@ -9,9 +9,22 @@
 #ifndef TYPE_UTILS_HPP
 #define TYPE_UTILS_HPP
 
+#include <cstdlib>
+#include <string>
 #include <tuple>
 #include <type_traits>
+#include <memory>
 #include <utility>
+
+#if defined(__GNUG__)
+    #define FNK_HAS_CXXABI 1
+    #include <cxxabi.h> 
+#elif defined (__clang__)
+    #define FNK_HAS_CXXABI 1
+    #include <CXXABI.h>
+#else
+    #define FNK_HAS_CXXABI 0
+#endif
 
 namespace fnk
 {
@@ -157,6 +170,37 @@ namespace utility
     {
         template <std::size_t N>
         using type = std::remove_reference_t<decltype(std::get<N>(std::declval<Tup>()))>;
+    };
+
+    //
+    // Type name for debug and other purposes;
+    // if possible (with g++ and clang++), demangled.
+    // On Windows typeid(T).name() should already be demangled.
+    //
+    template <typename T>
+    struct type_name
+    {
+    private:
+#if FNK_HAS_CXXABI
+        static inline decltype(auto) demangle (char const * name)
+        {
+            int status = 0;
+            std::unique_ptr<char, void(*)(void*)> result
+                { abi::__cxa_demangle (name, NULL, NULL, &status), std::free };
+
+            return status == 0 ? result.get() : name;
+        }
+#else
+        static inline decltype(auto) demangle (char const * name)
+        {
+            return name;
+        }
+#endif
+    public:
+        static inline std::string name (void)
+        {
+            return demangle (typeid(T).name());
+        }
     };
 } // namespace utility
 } // naemspace fnk
