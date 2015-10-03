@@ -35,6 +35,7 @@ static auto const parse_text_chars = std::string ("aabbb");
 static auto const parse_text_ws    = std::string (" \n\t \r\v");
 static auto const parse_text_nats  = std::string ("123 45 42 1001");
 static auto const parse_text_ints  = std::string ("-13 45 -99 +803");
+static auto const parse_text_floats = std::string ("2.3 3.14159 1 2e-2 5.2E5");
 static auto const parse_text_words = std::string ("the quick brown fox jumped over the lazy dog");
 
 int main (void)
@@ -83,6 +84,11 @@ int main (void)
     for (auto const& e : basic::integers<iter_type<char>>.parse (parse_text_ints))
         if (strparser<int, char>::is_result (e))
             std::cout << '\t' << strparser<int, char>::result_value(e) << std::endl;
+ 
+    std::cout << "floats:" << std::endl;
+    for (auto const& e : basic::floatings<iter_type<char>>.parse (parse_text_floats))
+        if (strparser<float, char>::is_result (e))
+            std::cout << '\t' << strparser<float, char>::result_value(e) << std::endl;
  
     std::cout << "words:" << std::endl;
     for (auto const& e : basic::words<iter_type<char>>.parse (parse_text_words))
