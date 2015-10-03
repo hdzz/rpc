@@ -85,7 +85,7 @@ static auto const parse_text_chars = std::string ("aabbb");
 static auto const parse_text_ws    = std::string (" \n\t \r\v");
 static auto const parse_text_nats  = std::string ("123 45 42 1001");
 static auto const parse_text_ints  = std::string ("-13 45 -99 +803");
-static auto const parse_text_floats = std::string ("2.3 3.14159 1 2e-2 5.2E5");
+static auto const parse_text_floats = std::string ("-2.3 3.14159 1 2e-2 -5.2E5");
 static auto const parse_text_words = std::string ("the quick brown fox jumped over the lazy dog");
 
 int main (void)
@@ -191,11 +191,11 @@ integers:
     -99
     803
 floats:
-    2.3
+    -2.3
     3.14159
     1
     0.02
-    520000
+    -520000
 words:
     the
     quick
