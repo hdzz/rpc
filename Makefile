@@ -9,7 +9,7 @@ examples_dir=$(base)/examples
 
 .PHONY: all test examples clean clean-all
 
-all: test
+all: test examples
 
 test:
 	@make -C $(test_dir)

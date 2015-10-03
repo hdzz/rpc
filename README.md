@@ -18,16 +18,18 @@ This is an implementation of monadic parser combinators for C++14 using the
 #include "basic/numeric_parsers.hpp"
 #include "regex/regex_parsers.hpp"
 
+using namespace rpc;
+
 template <typename T>
 using iter_type = typename std::basic_string<T>::const_iterator;
 
 template <typename V, typename T = V>
-using strparser = rpc::core::parser<iter_type<T>, V>;
+using strparser = core::parser<iter_type<T>, V>;
 
-auto as_bs = rpc::core::some (rpc::basic::one_of<iter_type<char>>({'a','b'}));
+auto as_bs = core::some (basic::one_of<iter_type<char>>({'a','b'}));
 
-auto rx_as = rpc::regex::regexparser<iter_type<char>> (std::regex("a+"));
-auto rx_as_bs = rpc::regex::regexparser<iter_type<char>> (std::regex("a+b+"));
+auto rx_as = basic::regexparser<iter_type<char>> (std::regex("a+"));
+auto rx_as_bs = basic::regexparser<iter_type<char>> (std::regex("a+b+"));
 
 static auto const parse_text_chars = std::string ("aabbb");
 static auto const parse_text_ws    = std::string (" \n\t \r\v");
@@ -38,17 +40,17 @@ static auto const parse_text_words = std::string ("the quick brown fox jumped ov
 int main (void)
 {
     std::cout << "characters from as_bs:" << std::endl; 
-    for (auto const& e : fnk::eval (as_bs.parse, parse_text_chars))
+    for (auto const& e : as_bs.parse (parse_text_chars))
         if (strparser<char>::is_result (e))
             std::cout << '\t' << strparser<char>::result_value (e) << std::endl;
 
     std::cout << "result from rx_as:" << std::endl; 
-    for (auto const& e : fnk::eval (rx_as.parse, parse_text_chars))
+    for (auto const& e : rx_as.parse (parse_text_chars))
         if (strparser<std::string, char>::is_result (e))
             std::cout << '\t' << strparser<std::string, char>::result_value (e) << std::endl;
 
     std::cout << "result from rx_as_bs:" << std::endl; 
-    for (auto const& e : fnk::eval (rx_as_bs.parse, parse_text_chars))
+    for (auto const& e : rx_as_bs.parse (parse_text_chars))
         if (strparser<std::string, char>::is_result (e))
             std::cout << '\t' << strparser<std::string, char>::result_value (e) << std::endl;
 
@@ -62,28 +64,28 @@ int main (void)
         else return std::string("not whitespace"); 
     };
 
-    std::cout << "whitespace:" << std::endl; 
-    for (auto const& e : fnk::eval (rpc::basic::spaces<iter_type<char>>.parse, parse_text_ws))
+    std::cout << "whitespace:" << std::endl;
+    for (auto const& e : basic::spaces<iter_type<char>>.parse (parse_text_ws))
         if (strparser<char>::is_result (e))
-            std::cout << '\t' << fnk::eval (wsname, strparser<char>::result_value (e)) << std::endl;
+            std::cout << '\t' << wsname (strparser<char>::result_value (e)) << std::endl;
 
     std::cout << "digits:" << std::endl;
-    for (auto& e : fnk::eval (rpc::basic::todigits<iter_type<char>>.parse, parse_text_nats))
+    for (auto& e : basic::todigits<iter_type<char>>.parse (parse_text_nats))
         if (strparser<unsigned int, char>::is_result (e))
             std::cout << '\t' << strparser<unsigned int, char>::result_value(e) << std::endl;
    
     std::cout << "naturals:" << std::endl;
-    for (auto const& e : fnk::eval (rpc::basic::naturals<iter_type<char>>.parse, parse_text_nats))
+    for (auto const& e : basic::naturals<iter_type<char>>.parse (parse_text_nats))
         if (strparser<unsigned long, char>::is_result (e))
             std::cout << '\t' << strparser<unsigned long, char>::result_value(e) << std::endl;
     
     std::cout << "integers:" << std::endl;
-    for (auto const& e : fnk::eval (rpc::basic::integers<iter_type<char>>.parse, parse_text_ints))
+    for (auto const& e : basic::integers<iter_type<char>>.parse (parse_text_ints))
         if (strparser<int, char>::is_result (e))
             std::cout << '\t' << strparser<int, char>::result_value(e) << std::endl;
  
     std::cout << "words:" << std::endl;
-    for (auto const& e : fnk::eval (rpc::basic::words<iter_type<char>>.parse, parse_text_words))
+    for (auto const& e : basic::words<iter_type<char>>.parse (parse_text_words))
         if (strparser<std::string, char>::is_result (e))
             std::cout << '\t' << strparser<std::string, char>::result_value(e) << std::endl;
     
