@@ -92,7 +92,6 @@ namespace fnk
 
 #undef DEFAULT_FUNCTOR_CONTAINER_INSTANCE
 
-
     template <class T>
     struct functor<fnk::maybe<T>> : fnk::default_functor<fnk::maybe, T>
     {

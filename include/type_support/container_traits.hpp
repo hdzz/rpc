@@ -291,6 +291,12 @@ namespace type_support
 
     template <typename T, template <typename> class K, typename Alloc>
     struct container_traits<std::basic_string<T,K<T>,Alloc> &&> : container_traits<std::basic_string<T,K<T>,Alloc>> {};
+
+    template <typename C, typename V>
+    inline decltype(auto) insert (V && v, C && c)
+    {
+        return container_traits<C>::insert (std::forward<C>(c), std::forward<V>(v));
+    }
 } // namespace type_support
 } // namespace fnk
 
