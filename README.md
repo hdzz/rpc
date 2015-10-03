@@ -31,6 +31,7 @@ To that end, here is what still needs to be done and what has been completed alr
     - `token`
     - `one_of`
     - `satisfy`
+    - `in_range`
 - Text parsers (various character types) (`basic/char_parsers`).
 - Numeric parsers (the following and all variations thereof) (`basic/numeric_parsers`):
     - `todigit`
