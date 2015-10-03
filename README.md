@@ -140,6 +140,12 @@ integers:
     45
     -99
     803
+floats:
+    2.3
+    3.14159
+    1
+    0.02
+    520000
 words:
     the
     quick
