@@ -11,45 +11,43 @@ This project is still in development; there may be breaking changes made to core
 To that end, here is what still needs to be done and what has been completed already.
 
 ### To be completed
-
-    - Combinators:
-        + `chainl`; `chainl1`; `chainr`; `chainr1`
-    - Better parser descriptions for constructing failure messages.
-    - Add infrastructure for creating ASTs from parse trees.
-    - Documentation (maybe in wiki pages?).
-    - Unit testing for each basic parser and combinator listed below.
+- Combinators:
+    - `chainl`; `chainl1`; `chainr`; `chainr1`
+- Better parser descriptions for constructing failure messages.
+- Add infrastructure for creating ASTs from parse trees.
+- Documentation (maybe in wiki pages?).
+- Unit testing for each basic parser and combinator listed below.
 
 ### Totally (or mostly) implemented
-
-    - Core types (`core/parser`, `core/range`):
-        + `parser`
-        + `range`, the object representing a view of tokens to be parsed.
-    - Basic Parsers (`basic/atom_parsers`):
-        + `fail`
-        + `unit`
-        + `item`
-        + `token`
-        + `one_of`
-        + `satisfy`
-    - Text parsers (various character types) (`basic/char_parsers`).
-    - Numeric parsers (the following and all variations thereof) (`basic/numeric_parsers`):
-        + `todigit`
-        + `natural`
-        + `integer`
-        + `floating`
-    - Regex parsers (construct a rpc::parser from std::regex object) (`basic/regex_parsers`).
-    - Combinators (`core/combinators`):
-        + `bind`
-        + `combine`
-        + `sequence`; `sequence` and ignore left; `sequence` and ignore right
-        + `option`
-        + `optional`
-        + `some`; `some` at least `n`
-        + `many`; `many` up to `n`
-        + `reduce`; `reduce` with a function `f`
-        + `lift` to new value type; `lift` to a new value type with a function `f`
-        + `liftreduce`; `liftreduce` with lift by a function `f`; `liftreduce` with lift by a function `f` and reduce
-          with a function `g`
+- Core types (`core/parser`, `core/range`):
+    - `parser`
+    - `range`, the object representing a view of tokens to be parsed.
+- Basic Parsers (`basic/atom_parsers`):
+    - `fail`
+    - `unit`
+    - `item`
+    - `token`
+    - `one_of`
+    - `satisfy`
+- Text parsers (various character types) (`basic/char_parsers`).
+- Numeric parsers (the following and all variations thereof) (`basic/numeric_parsers`):
+    - `todigit`
+    - `natural`
+    - `integer`
+    - `floating`
+- Regex parsers (construct a rpc::parser from std::regex object) (`basic/regex_parsers`).
+- Combinators (`core/combinators`):
+    - `bind`
+    - `combine`
+    - `sequence`; `sequence` and ignore left; `sequence` and ignore right
+    - `option`
+    - `optional`
+    - `some`; `some` at least `n`
+    - `many`; `many` up to `n`
+    - `reduce`; `reduce` with a function `f`
+    - `lift` to new value type; `lift` to a new value type with a function `f`
+    - `liftreduce`; `liftreduce` with lift by a function `f`; `liftreduce` with lift by a function `f` and reduce
+      with a function `g`
 
 ## Example - simple parsing of strings
 
