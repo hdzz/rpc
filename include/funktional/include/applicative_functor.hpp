@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 
+#include "concat.hpp"
 #include "functor.hpp"
 #include "mappable.hpp"
 #include "maybe.hpp"
@@ -140,6 +141,26 @@ namespace fnk
     {
         return fnk::applicative_functor<T>::apply (f, t);
     }
+/*
+    template <class F, class G,
+        typename = std::enable_if_t<fnk::applicative_functor<F>::is_applicative_functor_instance::value>,
+        typename = std::enable_if_t<fnk::applicative_functor<G>::is_applicative_functor_instance::value>>
+    inline decltype(auto) insertapply (F && f, G && g)
+    {
+        using FR = typename fnk::type_support::function_traits<F>::return_type;
+        using V  = typename fnk::type_support::container_traits<FR>::value_type;
+        return fnk::functor<FR>::fmap (fnk::type_support::insert<FR, V>, apply (f, g));
+    }
+    
+    template <class F, class G,
+        typename = std::enable_if_t<fnk::applicative_functor<F>::is_applicative_functor_instance::value>,
+        typename = std::enable_if_t<fnk::applicative_functor<G>::is_applicative_functor_instance::value>>
+    inline decltype(auto) concatapply (F && f, G && g)
+    {
+        using FR = typename fnk::type_support::function_traits<F>::return_type;
+        return fnk::functor<FR>::fmap (fnk::concat<FR>, apply (f, g));
+    }
+*/
 } // namespace fnk
 
 #endif // ifndef APPLICATIVE_FUNCTOR_HPP

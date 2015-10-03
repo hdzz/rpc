@@ -75,7 +75,7 @@ namespace fnk
             using U = fnk::utility::rebind_argument_t<C_, C>;
             using W = fnk::utility::rebind_argument_t<std::remove_cv_t<B>, B>;
 
-            auto b_ (std::forward<W>(b));
+            auto b_ = std::forward<W>(b);
             for (auto const& e : std::forward<U>(c))
                 b_ = fnk::eval (f, b_, e);
             return b_;

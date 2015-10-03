@@ -112,7 +112,9 @@ namespace detail
         using parse_type = std::function<std::list<result_type>(range_type const&)>;
         
         parse_type parse;
-       
+        
+        decltype(auto) operator() (range_type const& r) { return parse (r); }
+
         static inline decltype(auto) is_result (result_type const& r)
         {
             return r.type_index() == detail::PARSE_RESULT || r.type_index() == detail::PARSE_EMPTY_RESULT;
