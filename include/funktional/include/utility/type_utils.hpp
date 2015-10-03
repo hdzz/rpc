@@ -16,6 +16,8 @@
 #include <memory>
 #include <utility>
 
+#include "../type_support/function_traits.hpp"
+
 #if defined(__GNUG__)
     #define FNK_HAS_CXXABI 1
     #include <cxxabi.h> 
@@ -202,6 +204,16 @@ namespace utility
             return demangle (typeid(T).name());
         }
     };
+
+    template <typename F>
+    decltype(auto) format_function_type (void)
+    {
+        std::string out ("(");
+        auto const n = type_support::function_traits<F>::arity;
+        for (std::size_t i = 0; i < n; ++i)
+            out.append (type_name<typename type_support::function_traits<F>::template argument<i>::type>::name() + " -> ");
+        out.append (type_name<typename type_support::function_traits<F>::return_type>::name() + ")");
+    }
 } // namespace utility
 } // naemspace fnk
 
