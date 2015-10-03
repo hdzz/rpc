@@ -102,6 +102,19 @@ namespace basic
                 return false;
             });
     }
+    
+    template <typename It, typename T = typename std::iterator_traits<It>::value_type>
+    inline constexpr decltype(auto) none_of (std::initializer_list<T> l)
+    {
+        return satisfy<It>
+            ([lc = std::vector<T>(l)](T const& t) // Waiting for std::initializer_list to have constexpr .size() method,
+            {                                     // then we can remove std::vector and have a statically created std::array.
+                bool is_okay = true;
+                for (auto const& e : lc)
+                    is_okay = is_okay && (t != e);
+                return is_okay;
+            });
+    }
 
     //
     // Checks whether a token `t` is in the range [`start, `end`].
