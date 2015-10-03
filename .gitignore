@@ -3,4 +3,4 @@
 *.aux
 *.DS_Store
 *.nvimrc.custom
-
+*.swp
