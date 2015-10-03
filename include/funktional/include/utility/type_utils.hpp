@@ -91,19 +91,23 @@ namespace utility
     
     namespace detail
     {
-        template <typename T>
-        using constant_void = void;
+        template <typename F, typename ... Args>
+        struct is_good_call
+        {
+        private:
+            template<typename F_, typename... Args_>
+            static constexpr auto test (int) ->
+                decltype(std::declval<F_>()(std::declval<Args_>()...), std::true_type());
 
-        template <typename E, typename Enable = void>
-        struct is_well_formed : public std::false_type {};
-
-        template <typename F_, typename ... Args_>
-        struct is_well_formed <F_(Args_...), constant_void<std::result_of_t<F_(Args_...)>>>
-            : public std::true_type {};
+            template<typename F_, typename... Args_>
+            static constexpr std::false_type test (...);
+        public:
+            static constexpr bool value = decltype(test<F, Args...>(0)) {};
+        };
     }
-
-    template <typename E>
-    struct is_well_formed : public detail::is_well_formed<E> {};
+    
+    template <typename F, typename ... Args>
+    struct is_well_formed : public std::conditional<detail::is_good_call<F, Args...>::value, std::true_type, std::false_type> {};
 
 
     template <class T>
