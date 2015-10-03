@@ -19,9 +19,11 @@ To that end, here is what still needs to be done and what has been completed alr
 - Unit testing for each basic parser and combinator listed below.
 
 ### Totally (or mostly) implemented
-- Core types (`core/parser`, `core/range`):
-    - `parser`
+- Core types (`core/range`, `core/parser`):
     - `range`, the object representing a view of tokens to be parsed.
+    - `parser`
+        - The `parser` type is a `functor`, `applicative_functor`, `monad`, `monoid`, and `additive_monad`,
+        and so all the standard operators for these types are supported.
 - Basic Parsers (`basic/atom_parsers`):
     - `fail`
     - `unit`
