@@ -32,7 +32,7 @@ auto rx_as = basic::regexparser<iter_type<char>> (std::regex("a+"));
 auto rx_as_bs = basic::regexparser<iter_type<char>> (std::regex("a+b+"));
 
 static auto const parse_text_chars  = std::string ("aabbb");
-static auto const parse_text_ws     = std::string (" \n\t \r\v");
+static auto const parse_text_ws     = std::string (" \n\t \r\v\f");
 static auto const parse_text_nats   = std::string ("123 45 42 1001");
 static auto const parse_text_ints   = std::string ("-13 45 -99 +803");
 static auto const parse_text_floats = std::string ("-2.3 3.14159 1 2e-2 -5.2E5");
@@ -62,6 +62,7 @@ int main (void)
         else if (c == '\t') return std::string("tab");
         else if (c == '\v') return std::string("vertical tab");
         else if (c == '\r') return std::string("carriage return");
+        else if (c == '\f') return std::string("form feed");
         else return std::string("not whitespace"); 
     };
 
