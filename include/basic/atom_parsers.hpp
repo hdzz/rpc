@@ -68,7 +68,7 @@ namespace basic
         using T = std::decay_t<typename fnk::type_support::function_traits<P>::template argument<0>::type>;
         using OT = std::list<typename core::parser<It, T>::result_type>;
         
-        return core::parser<It, T>
+        return core::parser<It, T, T>
         {
             .parse = [=](typename core::parser<It, T>::range_type const& r)
             {
@@ -84,23 +84,33 @@ namespace basic
         };
     }
 
-    template <typename It, typename V>
-    inline constexpr decltype(auto) token (V && v)
+    template <typename It, typename T = typename std::iterator_traits<It>::value_type>
+    inline constexpr decltype(auto) token (T && t)
     {
-        return satisfy<It> ([v_ = std::forward<V>(v)](V const& e) { return v_ == e; });
+        return satisfy<It> ([t_ = std::forward<T>(t)](T const& e) { return t_ == e; });
     }
 
-    template <typename It, typename V>
-    inline constexpr decltype(auto) one_of (std::initializer_list<V> l)
+    template <typename It, typename T = typename std::iterator_traits<It>::value_type>
+    inline constexpr decltype(auto) one_of (std::initializer_list<T> l)
     {
         return satisfy<It>
-            ([lc = std::vector<V>(l)](V const& v)
-            {
+            ([lc = std::vector<T>(l)](T const& t) // Waiting for std::initializer_list to have constexpr .size() method,
+            {                                     // then we can remove std::vector and have a statically created std::array.
                 for (auto const& e : lc)
-                    if (v == e)
+                    if (t == e)
                         return true;
                 return false;
             });
+    }
+
+    //
+    // Checks whether a token `t` is in the range [`start, `end`].
+    //
+    template <typename It, typename T = typename std::iterator_traits<It>::value_type,
+        typename = std::enable_if_t<fnk::utility::is_well_formed<decltype(T::operator<=), T const&, T const&>::value>>
+    inline constexpr decltype(auto) in_range (T const& start, T const& end)
+    {
+        return satisfy<It> ([=](T const& t) { return start <= t && t <= end; });
     }
 } // namespace basic
 } // namespace rpc
