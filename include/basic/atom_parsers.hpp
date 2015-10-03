@@ -34,14 +34,16 @@ namespace basic
         }
     };
 
-    template <typename It, typename V = It>
+    template <typename It, typename V>
     inline decltype(auto) unit (V && v)
     {
-        return core::parser<It, V>
+        using U = std::remove_reference_t<V>;
+
+        return core::parser<It, U>
         {
-            .parse = [=](typename core::parser<It, V>::range_type const& r)
+            .parse = [=](typename core::parser<It, U>::range_type const& r)
             {
-                return std::list<typename core::parser<It, V>::result_type> { std::make_pair (std::forward<V>(v), r) };
+                return std::list<typename core::parser<It, U>::result_type> { std::make_pair (v, r) };
             }
         };
     }

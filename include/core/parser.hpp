@@ -77,6 +77,16 @@ namespace detail
             return parse (r); 
         }
 
+        static inline decltype(auto) is_parse_success (std::list<result_type> const& l)
+        {
+            return is_result (l.front());
+        }
+    
+        static inline decltype(auto) is_parse_failure (std::list<result_type> const& l)
+        {
+            return is_failure (l.front());
+        }
+
         static inline decltype(auto) is_result (result_type const& r)
         {
             return r.type_index() == detail::PARSE_RESULT || r.type_index() == detail::PARSE_EMPTY_RESULT;
@@ -233,15 +243,18 @@ namespace fnk
             {
                 .parse = [=](typename rpc::core::parser<It, U>::range_type const& r)
                 {
-                    std::list
-                        <typename rpc::core::parser_traits
-                            <typename rpc::core::parser<It, V>::template rebind<It, U>>::result_type> out;
+                    std::list<typename rpc::core::parser<It, U>::result_type> out;
                     for (auto const& e : eval (p.parse, r))
                     {
                         if (rpc::core::parser<It, V>::is_value_result (e))
                             type_support::container_traits<decltype(out)>::insert
                                 (out, std::make_pair
                                         (eval (f, rpc::core::parser<It, V>::result_value (e)),
+                                         rpc::core::parser<It, V>::result_range(e)));
+                        else if (rpc::core::parser<It, V>::is_empty_result (e))
+                            type_support::container_traits<decltype(out)>::insert
+                                (out, std::make_pair
+                                        (rpc::core::empty_result<U>{},
                                          rpc::core::parser<It, V>::result_range(e)));
                         else
                             type_support::container_traits<decltype(out)>::insert (out, rpc::core::failure{});
@@ -264,7 +277,7 @@ namespace fnk
     template <typename It, typename V>
     struct applicative_functor<rpc::core::parser<It, V>> : public default_applicative_functor<rpc::core::parser<It, V>>
     {
-        static inline constexpr decltype(auto) pure (It && v)
+        static inline decltype(auto) pure (It && v)
         {
             return rpc::core::parser<It, V>
             {
@@ -278,7 +291,7 @@ namespace fnk
         template <class F, typename U,
             typename = std::enable_if_t<rpc::core::is_parser_instance<F>::value>,
             typename = std::enable_if_t<rpc::core::is_parser_instance<U>::value>>
-        static inline constexpr decltype(auto) apply (F const& fs, U const& us)
+        static inline decltype(auto) apply (F const& fs, U const& us)
         {
             using S = typename rpc::core::parser_traits<F>::range_type::iter_type; 
             using W = typename rpc::core::parser_traits<F>::value_type;
@@ -290,14 +303,14 @@ namespace fnk
                     for (auto const& e1 : eval (fs.parse, r))
                     {
                         if (std::decay_t<F>::is_value_result (e1)) {
-                            for (auto const& e2 : eval (us.parse, std::decay_t<F>::result_range (e1)))
+                            for (auto const& e2 : eval (us.parse, fs.result_range (e1)))
                             {
-                                if (std::decay_t<U>::is_value_result (e2))
+                                if (us.is_value_result (e2))
                                     type_support::container_traits<decltype(out)>::insert
                                         (out, 
                                          std::make_pair
-                                            (eval (std::decay_t<F>::result_value(e1), std::decay_t<U>::result_value(e2)),
-                                             std::decay_t<U>::result_range(e2)));
+                                            (eval (fs.result_value(e1), us.result_value(e2)),
+                                             us.result_range(e2)));
                                 else
                                     type_support::container_traits<decltype(out)>::insert (out, rpc::core::failure{});
                             }
