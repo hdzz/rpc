@@ -203,6 +203,17 @@ namespace core
     }
 
     //
+    // Either 0 or 1 successful parses. If the primary parse fails,
+    // then the default value is returned; hence, this parser ALWAYS
+    // succeeds, but may or may not consume input.
+    //
+    template <typename It, typename V>
+    inline decltype(auto) optional (parser<It, V> const& p, V && default_value)
+    {
+        return option (p, basic::unit<It> (default_value));
+    }
+ 
+    //
     // One or more successful parses
     //
     template <typename It, typename V>
@@ -288,7 +299,7 @@ namespace core
     // Zero or more successful parses, but at most n successes
     //
     template <typename It, typename V>
-    inline decltype(auto) manyto (parser<It, V> const& p, std::size_t const n)
+    inline decltype(auto) many (parser<It, V> const& p, std::size_t const n)
     {
         return parser<It, V>
         {
@@ -316,17 +327,6 @@ namespace core
         }; 
     }
 
-    //
-    // Either 0 or 1 successful parses. If the primary parse fails,
-    // then the default value is returned; hence, this parser ALWAYS
-    // succeeds, but may or may not consume input.
-    //
-    template <typename It, typename V>
-    inline decltype(auto) optional (parser<It, V> const& p, V && default_value)
-    {
-        return option (p, basic::unit<It> (default_value));
-    }
- 
     //
     // Reduction parser: reduces over a list of parse values (using a foldl) to produce
     // a final parse result.
