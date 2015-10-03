@@ -86,9 +86,9 @@ namespace fnk
     }
 
     template <typename T>
-    inline constexpr decltype(auto) append (T && l, T && r)
+    inline constexpr decltype(auto) append (T const& l, T const& r)
     {
-        return fnk::semigroup<T>::append (std::forward<T>(l), std::forward<T>(r));
+        return fnk::semigroup<T>::append (l, r);
     }
 
 #define DEFAULT_TYPES()\
