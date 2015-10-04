@@ -4,10 +4,10 @@ This is an implementation of monadic parser combinators for C++14 using the
 [`funktional`](https://github.com/daltonwoodard/funktional) C++14 library.
 Much of this project's development was inspired and guided by the following papers:
 
-- [`Hutton, Graham, & Meijer, Erik. (1996). Monadic Parser Combinators.`](http://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf).
-- [`Koopman, Pieter & Plasmeijer, Rinus. (1998). Efficient Combinator Parsers`](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.36.2596)
-- [`Scott, Elizabeth & Johnstone, Adrian. (2009). GLL Parsing. Preliminary Proceedings of the Ninth Workshop on
-Language Descriptions Tools and Applications LDTA 2009`](http://ldta.info/2009/ldta2009proceedings.pdf)
+- [Hutton, Graham, & Meijer, Erik. (1996). Monadic Parser Combinators.](http://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf).
+- [Koopman, Pieter & Plasmeijer, Rinus. (1998). Efficient Combinator Parsers](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.36.2596)
+- [Scott, Elizabeth & Johnstone, Adrian. (2009). GLL Parsing. Preliminary Proceedings of the Ninth Workshop on
+Language Descriptions Tools and Applications LDTA 2009](http://ldta.info/2009/ldta2009proceedings.pdf)
 
 Currently the goal is to transform the existing code to use continuation passing style and implement the GLL parsing
 algorithm for the core parser combinators. This work is currently being done on the `continuations` branch.
