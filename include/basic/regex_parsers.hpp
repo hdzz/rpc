@@ -24,7 +24,7 @@ namespace rpc
 namespace basic
 {
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    inline constexpr decltype(auto) regexparser (std::basic_regex<CharT> const& rx)
+    inline constexpr decltype(auto) regexparser (std::basic_regex<CharT> const& rx, std::string const& pattern = "")
     {
         using OT = std::list<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::result_type>;
         return rpc::core::parser<It, std::basic_string<CharT>, CharT>
@@ -38,13 +38,14 @@ namespace basic
                             std::make_pair (matches.str (0), r.tail (matches.length(0)))
                         };
                 } else
-                    return OT { core::failure {"could not match to regex"} };
-            }
+                    return OT { core::failure {"expected [" + (pattern.empty() ? "regex match" : (pattern + " match")) + "]"} };
+            },
+            .description = std::string("[") + (pattern.empty() ? "regex match" : (pattern + " match")) + std::string("]")
         };
     }
     
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    inline constexpr decltype(auto) wregexparser (std::basic_regex<CharT> const& rx)
+    inline constexpr decltype(auto) wregexparser (std::basic_regex<CharT> const& rx, std::string const& pattern = "")
     {
         using OT = std::list<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::result_type>;
         return rpc::core::parser<It, std::basic_string<CharT>, CharT>
@@ -58,8 +59,9 @@ namespace basic
                             std::make_pair (matches.str (0), r.tail (matches.length(0)))
                         };
                 } else
-                    return OT { core::failure {"could not match to regex"} };
-            }
+                    return OT { core::failure {"expected [" + (pattern.empty() ? "wregex match" : (pattern + " match")) + "]"} };
+            },
+            .description = std::string("[") + (pattern.empty() ? "wregex match" : (pattern + " match")) + std::string("]")
         };
     }
 } // namespace basic

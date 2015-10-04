@@ -179,8 +179,9 @@ namespace basic
                          alphas<It, CharT>.result_range (l.back()))
                     }; 
             } else
-                return OT { rpc::core::failure{"expected word"} };
-        }
+                return OT { rpc::core::failure{"expected [word :: " + fnk::utility::type_name<CharT>::name() + "]"} };
+        },
+        .description = std::string("[word ::" + fnk::utility::type_name<CharT>::name() + "]")
     };
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
@@ -205,7 +206,7 @@ namespace basic
                          walphas<It, CharT>.result_range (l.back()))
                     }; 
             } else
-                return OT { rpc::core::failure{"expected word"} };
+                return OT { rpc::core::failure{"expected [word :: " + fnk::utility::type_name<CharT>::name() + "]"} };
         }
     };
 

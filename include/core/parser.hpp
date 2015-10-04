@@ -9,6 +9,7 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
+#include <ostream>
 #include <type_traits>
 #include <functional>
 #include <list>
@@ -28,6 +29,7 @@
 
 #include "funktional/include/type_support/container_traits.hpp"
 #include "funktional/include/type_support/function_traits.hpp"
+#include "funktional/include/utility/type_utils.hpp"
 
 namespace rpc
 {
@@ -49,9 +51,16 @@ namespace detail
         failure (std::string const& s) : msg(s) {}
         failure (std::string && s) : msg(s) {}
         failure (failure const& f) : msg(f.msg) {}
-    
+
+        
+
         std::string const msg;
     };
+
+    std::ostream& operator<< (std::ostream& os, failure const& f)
+    {
+        return (os << f.msg);
+    }
 
     template <typename It>
     struct empty_result {};
@@ -69,9 +78,10 @@ namespace detail
         using rebind = parser<S, U>;
 
         using parse_type = std::function<std::list<result_type>(range_type const&)>;
-        
-        parse_type parse;
-      
+     
+        parse_type const parse;
+        std::string const description;
+     
         inline decltype(auto) operator() (range_type const& r)
         {
             return parse (r); 
@@ -225,6 +235,16 @@ namespace detail
         template <typename S, typename U>
         using rebind = typename std::decay_t<P>::template rebind<S, U>;
     };
+
+    template <typename It, typename V>
+    inline decltype(auto) override_description (parser<It, V> const& p, std::string const& new_description)
+    {
+        return parser<It, V>
+        {
+            .parse = p.parse,
+            .description = new_description
+        };
+    }
 } // namespace core
 } // namespace rpc
 
@@ -260,7 +280,13 @@ namespace fnk
                             type_support::container_traits<decltype(out)>::insert (out, rpc::core::failure{});
                     }
                     return out;
-                }
+                },
+                .description
+                    = std::string("[")
+                    + p.description
+                    + std::string(" `fmap` ")
+                    + fnk::utility::format_function_type<F>()
+                    + std::string("]")
             }; 
         }
     };
@@ -277,14 +303,20 @@ namespace fnk
     template <typename It, typename V>
     struct applicative_functor<rpc::core::parser<It, V>> : public default_applicative_functor<rpc::core::parser<It, V>>
     {
-        static inline decltype(auto) pure (It && v)
+        static inline decltype(auto) pure (V && v)
         {
             return rpc::core::parser<It, V>
             {
                 .parse = [=](typename rpc::core::parser<It, V>::range_type const& r)
                 {
                     return std::list<typename rpc::core::parser<It, V>::result_type> { std::make_pair (v, r) };
-                }
+                },
+                .description
+                    = std::string("[pure: ")
+                    + utility::to_string<V> (v)
+                    + std::string(" :: ")
+                    + fnk::utility::type_name<V>::name()
+                    + std::string("]")
             };
         }
 
@@ -318,7 +350,13 @@ namespace fnk
                             type_support::container_traits<decltype(out)>::insert (out, rpc::core::failure{});                
                     }
                     return out;
-                }
+                },
+                .description
+                    = std::string("[")
+                    + fs.description
+                    + std::string(" `apply` ")
+                    + us.description
+                    + std::string("]")
             };
         }
     };
@@ -367,7 +405,13 @@ namespace fnk
                                     return std::list<typename rpc::core::parser_traits<R>::result_type>{ rpc::core::failure{} };
                              },
                             eval (std::forward<P>(p).parse, r)));
-                }
+                },
+                .description
+                    = std::string("[")
+                    + p.description
+                    + std::string(" `mbind` ")
+                    + fnk::utility::format_function_type<F>()
+                    + std::string("]")
             };
         }
     };
@@ -391,7 +435,8 @@ namespace fnk
                 .parse = [](typename rpc::core::parser<It, V>::range_type const& /*r*/)
                 {
                     return std::list<typename rpc::core::parser<It, V>::result_type> { rpc::core::failure{} };
-                }
+                },
+                .description = "[failure]"
             };
         } 
    
@@ -410,7 +455,13 @@ namespace fnk
                 {
                     auto l = fnk::eval (std::forward<P>(p).parse, r);
                     return rpc::core::parser<It, V>::is_failure (l.front()) ? fnk::eval (std::forward<Q>(q).parse, r) : l;
-                }
+                },
+                .description
+                    = std::string("[")
+                    + p.description
+                    + std::string(" `or` ")
+                    + q.description
+                    + std::string("]")
             };
         }
 

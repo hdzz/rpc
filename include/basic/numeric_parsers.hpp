@@ -54,48 +54,58 @@ namespace detail
                          P::result_range (preres.back()))
                 };
             } else
-                return OT { rpc::core::failure{"expected a (natural) number"} };
-        }
+                return OT { rpc::core::failure{"expected [natural]"} };
+        },
+        .description = "[natural]"
     };
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     rpc::core::parser<It, std::basic_string<CharT>> plus_natural_str =
-        rpc::core::ignorel (token<It, CharT> ('+'), natural_str<It, CharT>);
+        rpc::core::override_description
+            (rpc::core::ignorel (token<It, CharT> ('+'), natural_str<It, CharT>), "[(+) natural]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     rpc::core::parser<It, std::basic_string<CharT>> minus_natural_str = 
-        rpc::core::reduce
-            (rpc::core::sequence
-                (rpc::core::lift (character<It, CharT>('-'),
-                                  [](CharT c) { return std::basic_string<CharT>(1, c); }),
-                 natural_str<It, CharT>));
+        rpc::core::override_description
+            (rpc::core::reduce
+                (rpc::core::sequence
+                    (rpc::core::lift (character<It, CharT>('-'),
+                                      [](CharT c) { return std::basic_string<CharT>(1, c); }),
+                     natural_str<It, CharT>)),
+            "[(-) natural]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     rpc::core::parser<It, std::basic_string<CharT>> decimal_str =
-        rpc::core::reduce
-            (rpc::core::sequence
-                (rpc::core::lift (character<It, CharT>('.'),
-                                  [](CharT c) { return std::basic_string<CharT>(1, c); }),
-                 natural_str<It, CharT>));
+        rpc::core::override_description
+            (rpc::core::reduce
+                (rpc::core::sequence
+                    (rpc::core::lift (character<It, CharT>('.'),
+                                      [](CharT c) { return std::basic_string<CharT>(1, c); }),
+                     natural_str<It, CharT>)),
+            "[decimal]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto number_str = rpc::core::option (natural_str<It,CharT>, minus_natural_str<It,CharT>, plus_natural_str<It,CharT>);
    
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     rpc::core::parser<It, std::basic_string<CharT>> exponent_str =
-        rpc::core::reduce
-            (rpc::core::sequence
-                (rpc::core::lift (one_of<It, CharT>({'e','E'}),
-                                  [](CharT c) { return std::basic_string<CharT>(1, c); }),
-                 number_str<It, CharT>));
+        rpc::core::override_description
+            (rpc::core::reduce
+                (rpc::core::sequence
+                    (rpc::core::lift (one_of<It, CharT>({'e','E'}),
+                                      [](CharT c) { return std::basic_string<CharT>(1, c); }),
+                     number_str<It, CharT>)),
+            "[exponent]");
     
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     rpc::core::parser<It, std::basic_string<CharT>> floating_str =
-        rpc::core::reduce
-            (rpc::core::sequence
-                (number_str<It, CharT>,
-                 rpc::core::optional (decimal_str<It, CharT>, std::string("")),
-                 rpc::core::optional (exponent_str<It, CharT>, std::string(""))));
+        rpc::core::override_description
+            (rpc::core::reduce
+                (rpc::core::sequence
+                    (number_str<It, CharT>,
+                     rpc::core::optional (decimal_str<It, CharT>, std::string("")),
+                     rpc::core::optional (exponent_str<It, CharT>, std::string("")))),
+            "[(+/-) float]");
 
 } // namespace detail
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, typename IntT = unsigned int, int base = 0>
@@ -202,7 +212,7 @@ namespace detail
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto llfloatings = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, llfloating<It, CharT>));
-    
+ 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto llfloatingm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, llfloating<It, CharT>));
 } // namespace basic

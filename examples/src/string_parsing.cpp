@@ -96,6 +96,10 @@ int main (void)
         if (strparser<std::string, char>::is_result (e))
             std::cout << '\t' << strparser<std::string, char>::result_value(e) << std::endl;
 
+    std::cout << "failure looks like:" << std::endl;
+    auto f = basic::integers<iter_type<char>>.parse (std::string(""));
+    std::cout << strparser<int, char>::failure_message (f.front()) << std::endl;
+
     std::exit (0);
 }
 

@@ -41,7 +41,13 @@ namespace core
                                 return std::list<typename parser_traits<R>::result_type>{ failure{} };
                          },
                         fnk::eval (p.parse, r)));
-            }
+            },
+            .description
+                = std::string("[")
+                + p.description
+                + std::string(" `bind` ")
+                + fnk::utility::format_function_type<F>()
+                + std::string("]")
         }; 
     }
 
@@ -62,7 +68,13 @@ namespace core
             .parse = [=](typename parser<It, V>::range_type const& r)
             {
                 return fnk::append (fnk::eval (p.parse, r), fnk::eval (q.parse, r));
-            }
+            },
+            .description
+                = std::string("[")
+                + p.description
+                + std::string(" `++`  ")
+                + q.description
+                + std::string("]")
         };
     }
 
@@ -94,7 +106,13 @@ namespace core
                             (out, std::list<R>{failure{parser<It, V>::failure_message(e)}});
                 }
                 return fnk::concat (out);
-            }
+            },
+            .description
+                = std::string("[")
+                + p.description
+                + std::string(" `then` ")
+                + q.description
+                + std::string("]")
         };
     }
     
@@ -129,7 +147,13 @@ namespace core
                     return std::list<QR> { failure{} };
                 else 
                     return fnk::eval (q.parse, parser<PIt, PV>::result_range (l1.back()));
-            }
+            },
+            .description
+                = std::string("[(ignored) ")
+                + p.description
+                + std::string(" `then` ")
+                + q.description
+                + std::string("]")
         };
     }
 
@@ -170,7 +194,13 @@ namespace core
                         return l1;
                     }
                 }
-            }
+            },
+            .description
+                = std::string("[")
+                + p.description
+                + std::string(" `then` (ignored) ")
+                + q.description
+                + std::string("]")
         };
     }
     
@@ -191,7 +221,13 @@ namespace core
             {
                 auto l = fnk::eval (p.parse, r);
                 return parser<It, V>::is_failure (l.front()) ? fnk::eval (q.parse, r) : l;
-            }
+            },
+            .description
+                = std::string("[")
+                + p.description
+                + std::string(" `or` ")
+                + q.description
+                + std::string("]")
         };
     }
     
@@ -225,7 +261,11 @@ namespace core
             {
                 auto l1 = eval (p.parse, r);
                 if (parser<It, V>::is_failure (l1.front()))
-                    return std::list<typename parser<It, V>::result_type>{ failure{"expected at least one result"} };
+                    return std::list<typename parser<It, V>::result_type>
+                        { failure{"expected "
+                                  + std::string("[(some) ")
+                                  + p.description
+                                  + std::string("]")} };
                 else {
                     while (true)
                     {
@@ -236,7 +276,11 @@ namespace core
                             l1.splice (l1.cend(), l2);
                     }
                 } 
-            }
+            },
+            .description
+                = std::string("[(some) ")
+                + p.description
+                + std::string("]")
         }; 
     }
 
@@ -252,7 +296,11 @@ namespace core
             {
                 auto l1 = eval (p.parse, r);
                 if (parser<It, V>::is_failure (l1.front()))
-                    return std::list<typename parser<It, V>::result_type>{ failure{"expected at least one result"} };
+                    return std::list<typename parser<It, V>::result_type>
+                        { failure{"expected "
+                                  + std::string("[(some) ")
+                                  + p.description
+                                  + std::string("]")} };
                 else {
                     for (std::size_t i = 1; i < n; ++i) // run n-1 more times
                     {
@@ -264,7 +312,11 @@ namespace core
                     }
                     return l1;
                 } 
-            }
+            },
+            .description
+                = std::string("[(some " + std::to_string(n) + ") ")
+                + p.description
+                + std::string("]")
         }; 
     }
 
@@ -291,7 +343,11 @@ namespace core
                             l1.splice (l1.cend(), l2);
                     }
                 }
-            }
+            },
+            .description
+                = std::string("[(many) ")
+                + p.description
+                + std::string("]")
         }; 
     }
 
@@ -323,7 +379,11 @@ namespace core
                     else
                         return l1;
                 }
-            }
+            },
+            .description
+                = std::string("[(many up to" + std::to_string(n) + ") ")
+                + p.description
+                + std::string("]")
         }; 
     }
 
@@ -347,7 +407,11 @@ namespace core
                              parser<It, V>::result_range (l.back())) };
                 else
                     return std::list<typename parser<It, V>::result_type> { failure {parser<It, V>::failure_message (l.front())} };
-            }
+            },
+            .description
+                = std::string("[(reduced) ")
+                + p.description
+                + std::string("]")
         };
     }  
     
@@ -372,7 +436,11 @@ namespace core
                              parser<It, V>::result_range (l.back())) };
                 else
                     return std::list<typename parser<It, W>::result_type> { failure {parser<It, V>::failure_message (l.front())} };
-            }
+            },
+            .description
+                = std::string("[(reduced by " + fnk::utility::format_function_type<F>() + ") ")
+                + p.description
+                + std::string("]")
         };
     }
 
