@@ -10,7 +10,9 @@
 #define TYPE_UTILS_HPP
 
 #include <cstdlib>
+#include <list>
 #include <string>
+#include <sstream>
 #include <tuple>
 #include <type_traits>
 #include <memory>
@@ -205,14 +207,47 @@ namespace utility
         }
     };
 
+namespace detail
+{
+    template <typename F, std::size_t ... S>
+    struct function_args
+    {
+        static decltype(auto) names (void)
+        {
+            std::list<std::string> out;
+            for (auto const& e : { type_name<typename fnk::type_support::function_traits<F>::template argument<S>::type>::name()... })
+                out.push_back (e);
+            return out;
+        } 
+    };
+} // namespace detail
+
     template <typename F>
     decltype(auto) format_function_type (void)
     {
+        constexpr auto n = type_support::function_traits<F>::arity;
+        
         std::string out ("(");
-        auto const n = type_support::function_traits<F>::arity;
-        for (std::size_t i = 0; i < n; ++i)
-            out.append (type_name<typename type_support::function_traits<F>::template argument<i>::type>::name() + " -> ");
-        out.append (type_name<typename type_support::function_traits<F>::return_type>::name() + ")");
+        std::size_t i = n;
+        for (auto const& argname : detail::function_args<F, n-1>::names())
+        {
+            if (--i != 0)
+                out.append (argname + ", ");
+            else
+                out.append (argname);
+        }
+        return out;
+    }
+
+    //
+    // Works so long as T can be printed using operator<<
+    //
+    template <typename T>
+    static inline std::string to_string (T const& t)
+    {
+        std::stringstream s;            
+        s << t;
+        return s.str();
     }
 } // namespace utility
 } // naemspace fnk
