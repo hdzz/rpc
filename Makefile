@@ -5,19 +5,24 @@
 base=.
 include_dir=$(base)/include
 test_dir=$(base)/test
-examples_dir=$(base)/examples
+example_dir=$(base)/example
+profile_dir=$(base)/profile
 
-.PHONY: all test examples clean clean-all
+.PHONY: all test example profile clean
 
-all: test examples
+all: test example profile
 
 test:
 	@make -C $(test_dir)
 
-examples:
-	@make -C $(examples_dir)
+example:
+	@make -C $(example_dir)
+
+profile:
+	@make -C $(profile_dir)
 
 clean:
 	@make clean -C $(test_dir)
-	@make clean -C $(examples_dir)
+	@make clean -C $(example_dir)
+	@make clean -C $(profile_dir)
 

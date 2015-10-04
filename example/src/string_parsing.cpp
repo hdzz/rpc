@@ -35,7 +35,7 @@ auto rx_as = basic::regexparser<iter_type<char>> (std::regex("a+"));
 auto rx_as_bs = basic::regexparser<iter_type<char>> (std::regex("a+b+"));
 
 template <typename T>
-decltype(auto) print_list (std::list<T> const& l)
+std::string print_list (std::list<T> const& l)
 {
     std::stringstream out;
     if (not l.empty()) {

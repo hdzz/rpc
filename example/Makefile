@@ -15,7 +15,7 @@ builds=$(patsubst $(source_dir)/%, $(build_dir)/%, $(sources:.cpp=.out))
 CXX=clang++
 std=c++14
 iflags=-I$(base) -I$(include_dir) -I$(base)/funktional/include
-cxxflags=-std=$(std) $(OPTFLAGS) -Werror -Wall -Wextra -Wshadow -Wstrict-aliasing -Wcast-align -fpermissive
+cxxflags=-std=$(std) $(OPTFLAGS) -O2 -Werror -Wall -Wextra -Wshadow -Wstrict-aliasing -Wcast-align -fpermissive
 
 .PHONY: all setup clean clean-all
 
