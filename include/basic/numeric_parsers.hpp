@@ -17,7 +17,7 @@
 #include "core/combinators.hpp"
 
 #include "atom_parsers.hpp"
-#include "char_parsers.hpp"
+#include "text_parsers.hpp"
 
 #include "funktional/include/eval.hpp"
 #include "funktional/include/functor.hpp"
