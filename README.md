@@ -16,6 +16,8 @@ To that end, here is what still needs to be done and what has been completed alr
     - [ ] `chainl1`;
     - [ ] `chainr`
     - [ ] `chainr1`
+- [x] Convert to continuation passing style for combinators to remove incidental structure in parsing (this will
+  drastically alter much of the code, so it's currently being developed on branch `continuations`).
 - [x] Better parser descriptions for constructing failure messages.
 - [ ] Add infrastructure for error recovery.
 - [x] Add infrastructure for creating ASTs from parse trees.
