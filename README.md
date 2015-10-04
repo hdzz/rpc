@@ -18,7 +18,7 @@ To that end, here is what still needs to be done and what has been completed alr
     - [ ] `chainr1`
 - [x] Better parser descriptions for constructing failure messages.
 - [ ] Add infrastructure for error recovery.
-- [ ] Add infrastructure for creating ASTs from parse trees.
+- [x] Add infrastructure for creating ASTs from parse trees.
 - [ ] Generalize output container type from std::list (using std::vector may be more desirable for high-performance cases)
 - [ ] Use allocator-awareness where applicable.
 - [ ] Add parser and pretty printer for error messages.
@@ -59,6 +59,7 @@ To that end, here is what still needs to be done and what has been completed alr
     - `lift` to new value type; `lift` to a new value type with a function `f`
     - `liftreduce`; `liftreduce` with lift by a function `f`; `liftreduce` with lift by a function `f` and reduce
       with a function `g`
+    - `inject` a value replacing a successful parse result
 
 ## Example - simple parsing of strings
 
