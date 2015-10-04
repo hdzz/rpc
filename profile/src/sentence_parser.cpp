@@ -83,8 +83,8 @@ int main (int argc, char ** argv)
             << [](bool b) { return b ? "success" : "failure"; } (sentences.is_parse_success (res))
             << std::endl;
         std::cout << "elapsed time: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms." << std::endl;
+              << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
+              << " microsec." << std::endl;
     }
 
     std::exit (EXIT_SUCCESS);
