@@ -10,15 +10,9 @@ funktional is a c++14 library for (mostly) pure functional programming.
 - Always capture by value when writing lambdas. This removes the possibility of confusion on a library user's part. If
   copies are too expensive to make, `std::ref` and `std::cref` can be used.
 
-<<<<<<< HEAD
 ## Projects using the funktional library
 
 If your project uses the funktional library let me know; submit a pull request adding an entry to this list.
-=======
-## Projects using the `funktional` library
-
-If your project uses the `funktional` library let me know; submit a pull request adding an entry to this list.
->>>>>>> e9f1080da44a7dde310792929499193368d95225
 
 - `rpc`; [(real) C++ Parser Combinators](https://github.com/daltonwoodard/rpc).
 
