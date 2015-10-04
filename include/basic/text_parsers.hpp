@@ -25,13 +25,13 @@ namespace rpc
 namespace basic
 {
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    inline constexpr decltype(auto) character (CharT && c)
+    inline decltype(auto) character (CharT && c)
     {
         return rpc::basic::token<It, CharT> (std::forward<CharT>(c));
     }
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    inline constexpr decltype(auto) characters (CharT && c, std::size_t const n = 0)
+    inline decltype(auto) characters (CharT && c, std::size_t const n = 0)
     {
         return n == 0 ? rpc::core::some (character<It, CharT>(std::forward<CharT>(c)))
                       : rpc::core::some (character<It, CharT>(std::forward<CharT>(c)), n);
@@ -54,6 +54,24 @@ namespace basic
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto wspacem = rpc::core::many (wspace<It, CharT>);
+    
+    template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
+    auto punct = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::ispunct(c); }, "punctuation");
+
+    template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
+    auto puncts = rpc::core::some (punct<It, CharT>);
+
+    template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
+    auto punctm = rpc::core::many (punct<It, CharT>);
+
+    template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
+    auto wpunct = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswpunct(c); }, "wide punctuation");
+     
+    template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
+    auto wpuncts = rpc::core::some (wpunct<It, CharT>);
+
+    template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
+    auto wpunctm = rpc::core::many (wpunct<It, CharT>);
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto alpha = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isalpha(c); }, "alphabetic");

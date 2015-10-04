@@ -258,7 +258,7 @@ namespace fnk
             typename = std::enable_if_t
                 <std::is_convertible
                     <V, typename type_support::function_traits<F>::template argument<0>::type>::value>>
-        static constexpr rpc::core::parser<It, U> fmap (F && f, rpc::core::parser<It, V> const& p)
+        static inline rpc::core::parser<It, U> fmap (F && f, rpc::core::parser<It, V> const& p)
         {
             return rpc::core::parser<It, U>
             {
@@ -387,7 +387,7 @@ namespace fnk
     {
         template <class F, typename P,
             typename = std::enable_if_t<std::is_same<std::decay_t<P>, rpc::core::parser<It, V>>::value>>
-        static inline constexpr decltype(auto) mbind (P && p, F && f)
+        static inline decltype(auto) mbind (P && p, F && f)
         {
             using R = typename type_support::function_traits<F>::result_type;
             return rpc::core::parser<It, typename R::value_type>
@@ -429,7 +429,7 @@ namespace fnk
     template <typename It, typename V>
     struct monoid<rpc::core::parser<It, V>> 
     {
-        static inline constexpr decltype(auto) unity (void)
+        static inline decltype(auto) unity (void)
         {
             return rpc::core::parser<It, V>
             {
@@ -448,7 +448,7 @@ namespace fnk
                 <std::is_base_of<rpc::core::parser<It, V>, std::decay_t<P>>::value>,
             typename = std::enable_if_t
                 <std::is_base_of<rpc::core::parser<It, V>, std::decay_t<Q>>::value>>
-        static inline constexpr decltype(auto) append (P && p, Q && q)
+        static inline decltype(auto) append (P && p, Q && q)
         {
             return rpc::core::parser<It, V>
             {

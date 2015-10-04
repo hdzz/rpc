@@ -24,7 +24,7 @@ namespace rpc
 namespace basic
 {
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    inline constexpr decltype(auto) regexparser (std::basic_regex<CharT> const& rx, std::string const& pattern = "")
+    inline decltype(auto) regexparser (std::basic_regex<CharT> const& rx, std::string const& pattern = "")
     {
         using OT = std::list<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::result_type>;
         return rpc::core::parser<It, std::basic_string<CharT>, CharT>
@@ -45,7 +45,7 @@ namespace basic
     }
     
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    inline constexpr decltype(auto) wregexparser (std::basic_regex<CharT> const& rx, std::string const& pattern = "")
+    inline decltype(auto) wregexparser (std::basic_regex<CharT> const& rx, std::string const& pattern = "")
     {
         using OT = std::list<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::result_type>;
         return rpc::core::parser<It, std::basic_string<CharT>, CharT>

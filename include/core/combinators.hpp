@@ -500,6 +500,58 @@ namespace core
     {
         return reduce (lift (p, f), g, b);
     }
+
+    //
+    // Inject a specified value in the place of a successful result value,
+    // otherwise fail normally.
+    //
+    template <typename W, typename It, typename V>
+    inline decltype(auto) inject (parser<It, V> const& p, W && w)
+    {
+        using R = typename parser<It, W>::result_type;
+        return parser<It, W>
+        {
+            .parse = [=](typename parser<It, W>::range_type const& r)
+            {
+                auto l = fnk::eval (p.parse, r);
+                std::list<R> out;
+
+                auto iter = l.cbegin();
+                while (iter != l.cend() && parser<It, V>::is_result (*iter))
+                {
+                    out.emplace_back (w, parser<It, V>::result_range (*iter));
+                    ++iter;
+                }
+                if (iter != l.cend())
+                    out.emplace_back (parser<It, V>::failure_message (iter));
+                return out;
+            }
+        };
+    }
+/*
+namespace detail
+{
+    template <typename It, typename V, typename F>
+    inline decltype(auto) rest (V const& v, parser<It, V> const& p, parser<It, F> const& op)
+    {
+        return parser<It, V>
+        {
+            
+        };
+    }
+} // namespace detail
+
+    template <typename It, typename V, typename F>
+    inline decltype(auto) chainls (parser<It, V> const& p, parser<It, F> const& op)
+    {
+        return parser<It, V>
+        {
+            .parse = [=](typename parser<It, V>::range_type const& r)
+            {
+            }
+        };
+    }
+*/
 } // namespace core
 } // namespace rpc
 
