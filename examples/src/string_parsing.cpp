@@ -70,25 +70,37 @@ int main (void)
     std::cout << "rx_as result:" << std::endl; 
     {
         auto rxas_result = rx_as.parse (parse_text_chars);
-        std::cout << '\t' << print_list (strparser<std::string, char>::values (rxas_result)) << std::endl;
+        std::cout
+            << '\t'
+            << print_list (strparser<std::string, char>::values (rxas_result))
+            << std::endl;
     }
     
     std::cout << "rx_as_bs result:" << std::endl; 
     {
         auto rxasbs_result = rx_as_bs.parse (parse_text_chars);
-        std::cout << '\t' << print_list (strparser<std::string, char>::values (rxasbs_result)) << std::endl;
+        std::cout
+            << '\t'
+            << print_list (strparser<std::string, char>::values (rxasbs_result))
+            << std::endl;
     }
     
     std::cout << "whitespace result:" << std::endl;
     {
         auto spaces_result = basic::spaces<iter_type<char>>.parse (parse_text_ws);
-        std::cout << '\t' << print_list (fnk::map (wsname, strparser<char, char>::values (spaces_result))) << std::endl;
+        std::cout
+            << '\t'
+            << print_list (fnk::map (wsname, strparser<char, char>::values (spaces_result)))
+            << std::endl;
     }
     
     std::cout << "digits result:" << std::endl;
     {
         auto digits_result = basic::todigits<iter_type<char>>.parse (parse_text_nats);
-        std::cout << '\t' << print_list (strparser<unsigned int, char>::values (digits_result)) << std::endl;
+        std::cout
+            << '\t'
+            << print_list (strparser<unsigned int, char>::values (digits_result))
+            << std::endl;
     }
     
     std::cout << "naturals result:" << std::endl;
@@ -104,7 +116,10 @@ int main (void)
         auto ints_result = basic::integers<iter_type<char>>.parse (parse_text_ints);
         auto ints_vals   = strparser<int, char>::values (ints_result);
         std::cout << '\t' << print_list (ints_vals) << std::endl;
-        std::cout << "\tsum: " << fnk::fold (ints_vals) << std::endl;
+        std::cout
+            << "\taverage: "
+            << static_cast<float>(fnk::fold (ints_vals)) / static_cast<float>(ints_vals.size())
+            << std::endl;
     }
     
     std::cout << "floats result:" << std::endl;
@@ -112,13 +127,19 @@ int main (void)
         auto floats_result = basic::floatings<iter_type<char>>.parse (parse_text_floats);
         auto floats_vals   = strparser<float, char>::values (floats_result);
         std::cout << '\t' << print_list (floats_vals) << std::endl;
-        std::cout << "\tproduct: " << fnk::foldr ([](float x, float y) { return x * y; }, 1.0, floats_vals) << std::endl;
+        std::cout
+            << "\tproduct: "
+            << fnk::foldr ([](float x, float y) { return x * y; }, 1.0, floats_vals)
+            << std::endl;
     }
 
     std::cout << "words result:" << std::endl;
     {
         auto words_result = basic::words<iter_type<char>>.parse (parse_text_words);
-        std::cout << '\t' << print_list (strparser<std::string, char>::values (words_result)) << std::endl;
+        std::cout
+            << '\t'
+            << print_list (strparser<std::string, char>::values (words_result))
+            << std::endl;
     }
 
     std::cout << "failure looks like:" << std::endl;
