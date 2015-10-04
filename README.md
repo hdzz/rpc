@@ -5,10 +5,6 @@ This is an implementation of monadic parser combinators for C++14 using the
 Much of this project's development was inspired and guided by [`Hutton, Graham, & Meijer, Erik. (1996). Monadic Parser
 Combinators.`](http://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf).
 
-## Features
-
-- Error reporting format designed to be parsed easily and pretty printed if desired.
-
 ## Notes
 
 This project is still in development; there may be breaking changes made to core types for some time yet.
