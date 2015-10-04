@@ -225,11 +225,10 @@ namespace detail
     template <typename F>
     decltype(auto) format_function_type (void)
     {
-        constexpr auto n = type_support::function_traits<F>::arity;
+        constexpr auto N = type_support::function_traits<F>::arity;
         
         std::string out ("(");
-        std::size_t i = n;
-        for (auto const& argname : detail::function_args<F, n-1>::names())
+        for (auto const& argname : detail::function_args<F, N-1>::names())
                 out.append (argname + " -> ");
         out.append (type_name<typename type_support::function_traits<F>::return_type>::name());   
         out.append (")");
