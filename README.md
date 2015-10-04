@@ -10,13 +10,14 @@ Combinators.`](http://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf).
 This project is still in development; there may be breaking changes made to core types for some time yet.
 To that end, here is what still needs to be done and what has been completed already.
 
-### To be completed
+### To be completed (check indicates work is in progress)
 - [ ] Combinators:
     - [ ] `chainl`
     - [ ] `chainl1`;
     - [ ] `chainr`
     - [ ] `chainr1`
 - [x] Better parser descriptions for constructing failure messages.
+- [ ] Add infrastructure for error recovery.
 - [ ] Add infrastructure for creating ASTs from parse trees.
 - [ ] Add parser and pretty printer for error messages.
 - [ ] Documentation (maybe in wiki pages?).
