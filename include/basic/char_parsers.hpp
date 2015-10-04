@@ -38,7 +38,7 @@ namespace basic
     }
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto space = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isspace(c); });
+    auto space = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isspace(c); }, "whitespace");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto spaces = rpc::core::some (space<It, CharT>);
@@ -47,7 +47,7 @@ namespace basic
     auto spacem = rpc::core::many (space<It, CharT>);
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto wspace = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswspace(c); });
+    auto wspace = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswspace(c); }, "wide whitespace");
      
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto wspaces = rpc::core::some (wspace<It, CharT>);
@@ -56,7 +56,7 @@ namespace basic
     auto wspacem = rpc::core::many (wspace<It, CharT>);
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto alpha = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isalpha(c); });
+    auto alpha = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isalpha(c); }, "alphabetic");
      
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto alpham = rpc::core::many (alpha<It, CharT>); 
@@ -65,7 +65,7 @@ namespace basic
     auto alphas = rpc::core::some (alpha<It, CharT>); 
     
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto walpha = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswalpha(c); });
+    auto walpha = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswalpha(c); }, "wide alphabetic");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto walphas = rpc::core::some (walpha<It, CharT>); 
@@ -74,7 +74,7 @@ namespace basic
     auto walpham = rpc::core::many (walpha<It, CharT>); 
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto lower = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::islower(c); });
+    auto lower = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::islower(c); }, "lower-case");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto lowers = rpc::core::some (lower<It, CharT>); 
@@ -83,7 +83,7 @@ namespace basic
     auto lowerm = rpc::core::many (lower<It, CharT>); 
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto wlower = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswlower(c); });
+    auto wlower = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswlower(c); }, "wide lower-case");
   
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto wlowers = rpc::core::some (wlower<It, CharT>); 
@@ -92,7 +92,7 @@ namespace basic
     auto wlowerm = rpc::core::many (wlower<It, CharT>); 
   
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto upper = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isupper(c); });   
+    auto upper = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isupper(c); }, "upper-case");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto uppers = rpc::core::some (upper<It, CharT>); 
@@ -101,7 +101,7 @@ namespace basic
     auto upperm = rpc::core::many (upper<It, CharT>); 
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto wupper = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswupper(c); });
+    auto wupper = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswupper(c); }, "wide upper-case");
      
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto wuppers = rpc::core::some (wupper<It, CharT>); 
@@ -110,7 +110,7 @@ namespace basic
     auto wupperm = rpc::core::many (wupper<It, CharT>); 
      
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto digit = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isdigit(c); });
+    auto digit = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isdigit(c); }, "digit character");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto digits = rpc::core::some (digit<It, CharT>); 
@@ -119,7 +119,7 @@ namespace basic
     auto digitm = rpc::core::many (digit<It, CharT>); 
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto wdigit = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswdigit(c); });
+    auto wdigit = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswdigit(c); }, "wide digit character");
      
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto wdigits = rpc::core::some (wdigit<It, CharT>); 
@@ -128,7 +128,7 @@ namespace basic
     auto wdigitm = rpc::core::many (wdigit<It, CharT>); 
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto hexdigit = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isxdigit(c); });
+    auto hexdigit = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::isxdigit(c); }, "hex-digit character");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto hexdigits = rpc::core::some (hexdigit<It, CharT>); 
@@ -137,7 +137,7 @@ namespace basic
     auto hexdigitm = rpc::core::many (hexdigit<It, CharT>); 
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto whexdigit = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswxdigit(c); });
+    auto whexdigit = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswxdigit(c); }, "wide hex-digit character");
      
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto whexdigits = rpc::core::some (whexdigit<It, CharT>); 
@@ -146,7 +146,7 @@ namespace basic
     auto whexdigitm = rpc::core::many (whexdigit<It, CharT>); 
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto cntrl = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iscntrl(c); });
+    auto cntrl = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iscntrl(c); }, "control character");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto cntrls = rpc::core::some (cntrl<It, CharT>); 
@@ -155,7 +155,7 @@ namespace basic
     auto cntrlm = rpc::core::many (cntrl<It, CharT>); 
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto wcntrl = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswcntrl(c); });
+    auto wcntrl = rpc::basic::satisfy<It> ([](CharT const& c) -> bool { return std::iswcntrl(c); }, "wide control character");
      
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto wcntrls = rpc::core::some (wcntrl<It, CharT>); 

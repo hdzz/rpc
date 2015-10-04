@@ -109,8 +109,10 @@ namespace detail
 
 } // namespace detail
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, typename IntT = unsigned int, int base = 0>
-    auto todigit = fnk::functor<rpc::core::parser<It, CharT>>::fmap
-        ([](CharT c) -> IntT { return (c - '0'); }, basic::digit<It, CharT>); 
+    auto todigit = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, CharT>>::fmap
+            ([](CharT c) -> IntT { return (c - '0'); }, basic::digit<It, CharT>),
+        "[digit]"); 
  
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, typename IntT = unsigned int, int base = 0>
     auto todigits = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, todigit<It, CharT, IntT, base>));
@@ -119,8 +121,10 @@ namespace detail
     auto todigitm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, todigit<It, CharT, IntT, base>));
      
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, typename IntT = unsigned int, int base = 0>
-    auto towdigit = fnk::functor<rpc::core::parser<It, CharT>>::fmap
-        ([](CharT c) -> IntT { return (c - '0'); }, basic::wdigit<It, CharT>); 
+    auto towdigit = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, CharT>>::fmap
+            ([](CharT c) -> IntT { return (c - '0'); }, basic::wdigit<It, CharT>),
+        "[wide digit]"); 
     
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, typename IntT = unsigned int, int base = 0>
     auto towdigits = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, towdigit<It, CharT, IntT, base>)); 
@@ -129,9 +133,11 @@ namespace detail
     auto towdigitm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, towdigit<It, CharT, IntT, base>)); 
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
-    auto natural = fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
-        ([](std::basic_string<CharT> const& s) -> unsigned long { return std::stoul(s, nullptr, base); },
-         detail::natural_str<It, CharT>);
+    auto natural = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
+            ([](std::basic_string<CharT> const& s) -> unsigned long { return std::stoul(s, nullptr, base); },
+            detail::natural_str<It, CharT>),
+        "[nautral]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
     auto naturals = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, natural<It, CharT, base>));
@@ -140,9 +146,11 @@ namespace detail
     auto naturalm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, natural<It, CharT, base>));
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
-    auto lnatural = fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
-        ([](std::basic_string<CharT> const& s) -> unsigned long long { return std::stoull(s,nullptr,base); },
-         detail::natural_str<It, CharT>);
+    auto lnatural = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
+            ([](std::basic_string<CharT> const& s) -> unsigned long long { return std::stoull(s,nullptr,base); },
+            detail::natural_str<It, CharT>),
+        "[long natural]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
     auto lnaturals = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, lnatural<It, CharT, base>));
@@ -151,9 +159,11 @@ namespace detail
     auto lnaturalm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, lnatural<It, CharT, base>));
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
-    auto integer = fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
-        ([](std::basic_string<CharT> const& s) -> int { return std::stoi(s, nullptr, base); },
-         detail::number_str<It, CharT>);
+    auto integer = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
+            ([](std::basic_string<CharT> const& s) -> int { return std::stoi(s, nullptr, base); },
+            detail::number_str<It, CharT>),
+        "[integer]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
     auto integers = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, integer<It, CharT, base>));
@@ -162,9 +172,11 @@ namespace detail
     auto integerm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, integer<It, CharT, base>));
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
-    auto linteger = fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
-        ([](std::basic_string<CharT> const& s) -> long { return std::stol(s, nullptr, base); },
-         detail::number_str<It, CharT>);
+    auto linteger = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
+            ([](std::basic_string<CharT> const& s) -> long { return std::stol(s, nullptr, base); },
+            detail::number_str<It, CharT>),
+        "[long integer]");
   
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
     auto lintegers = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, linteger<It, CharT, base>));
@@ -173,9 +185,11 @@ namespace detail
     auto lintegerm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, linteger<It, CharT, base>));
     
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
-    auto llinteger = fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
-        ([](std::basic_string<CharT> const& s) -> long long { return std::stoll(s, nullptr, base); },
-         detail::number_str<It, CharT>);
+    auto llinteger = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
+            ([](std::basic_string<CharT> const& s) -> long long { return std::stoll(s, nullptr, base); },
+            detail::number_str<It, CharT>),
+        "[long long integer]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type, int base = 0>
     auto llintegers = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, llinteger<It, CharT, base>));
@@ -184,9 +198,11 @@ namespace detail
     auto llintegerm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, llinteger<It, CharT, base>));
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto floating = fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
-        ([](std::basic_string<CharT> const& s) -> float { return std::stof(s, nullptr); },
-         detail::floating_str<It, CharT>);
+    auto floating = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
+            ([](std::basic_string<CharT> const& s) -> float { return std::stof(s, nullptr); },
+            detail::floating_str<It, CharT>),
+        "[float]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto floatings = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, floating<It, CharT>));
@@ -195,9 +211,11 @@ namespace detail
     auto floatingm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, floating<It, CharT>));
     
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto lfloating = fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
-        ([](std::basic_string<CharT> const& s) -> double { return std::stod(s, nullptr); },
-         detail::floating_str<It, CharT>);
+    auto lfloating = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
+            ([](std::basic_string<CharT> const& s) -> double { return std::stod(s, nullptr); },
+            detail::floating_str<It, CharT>),
+        "[double]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto lfloatings = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, lfloating<It, CharT>));
@@ -206,9 +224,11 @@ namespace detail
     auto lfloatingm = rpc::core::many (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, lfloating<It, CharT>));
     
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    auto llfloating = fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
-        ([](std::basic_string<CharT> const& s) -> long double { return std::stold(s, nullptr); },
-         detail::floating_str<It, CharT>);
+    auto llfloating = rpc::core::override_description
+        (fnk::functor<rpc::core::parser<It, std::basic_string<CharT>>>::fmap
+            ([](std::basic_string<CharT> const& s) -> long double { return std::stold(s, nullptr); },
+            detail::floating_str<It, CharT>),
+        "[long double]");
 
     template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
     auto llfloatings = rpc::core::some (rpc::core::ignorel (rpc::basic::spacem<It, CharT>, llfloating<It, CharT>));
