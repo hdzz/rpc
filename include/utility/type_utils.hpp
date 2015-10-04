@@ -230,12 +230,9 @@ namespace detail
         std::string out ("(");
         std::size_t i = n;
         for (auto const& argname : detail::function_args<F, n-1>::names())
-        {
-            if (--i != 0)
-                out.append (argname + ", ");
-            else
-                out.append (argname);
-        }
+                out.append (argname + " -> ");
+        out.append (type_name<typename type_support::function_traits<F>::return_type>::name());   
+        out.append (")");
         return out;
     }
 
