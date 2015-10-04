@@ -71,7 +71,7 @@ To that end, here is what still needs to be done and what has been completed alr
 #include "core/combinators.hpp"
 #include "basic/atom_parsers.hpp"
 #include "basic/numeric_parsers.hpp"
-#include "regex/regex_parsers.hpp"
+#include "basic/regex_parsers.hpp"
 
 using namespace rpc;
 
