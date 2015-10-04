@@ -19,7 +19,10 @@ namespace rpc
 namespace core
 {
     //
-    // A view into the sequence of tokens to be parsed.
+    // A view into the sequence of tokens to be parsed. If
+    // additional information is needed (such as file line numbers)
+    // to handle parse errors, simply inherit from this struct
+    // and define the appropriate methods.
     //
     template <typename IterT,
         typename = std::enable_if_t
@@ -28,42 +31,48 @@ namespace core
     struct range
     {
     public:
-        using iter_type = IterT;
-        using traits = std::iterator_traits<iter_type>;
-        using token_type = typename traits::value_type;
-        using diff_type = typename traits::difference_type;
+        using iter_type   = IterT;
+        using iter_traits = std::iterator_traits<iter_type>;
+        using token_type  = typename iter_traits::value_type;
+        using diff_type   = typename iter_traits::difference_type;
         
-        range (void) { static_assert (sizeof(IterT) == 0, "range is not defaul constructable"); }
+        struct is_range_type : public std::true_type {};
+        
+        range (void) { static_assert (sizeof(IterT) == 0, "ranges are not defaul constructable"); }
     
         template <typename C,
             typename = std::enable_if_t<fnk::type_support::container_traits<C>::is_container::value>,
             typename = std::enable_if_t<std::is_same<token_type, typename fnk::type_support::container_traits<C>::value_type>::value>>
-        constexpr range (C const& c) noexcept : valid(not c.empty()), start(c.begin()), end(c.end()) {}
+        constexpr range (C const& c) noexcept : valid_(not c.empty()), begin_(c.begin()), end_(c.end()) {}
 
         template <typename It,
             typename = std::enable_if_t<std::is_base_of<iter_type, It>::value>>
-        constexpr range (It const& s, It const& e) noexcept : valid(0 < std::distance(s, e)), start(s), end(e) {}
+        constexpr range (It const& b, It const& e) noexcept : valid_(0 < std::distance(b, e)), begin_(b), end_(e) {}
 
-        inline constexpr decltype(auto) getstart (void) const noexcept { return start; }
+        inline constexpr decltype(auto) begin (void) const noexcept { return begin_; }
 
-        inline constexpr decltype(auto) getend (void) const noexcept { return end; }
+        inline constexpr decltype(auto) cbegin (void) const noexcept { return begin_; }
 
-        inline constexpr decltype(auto) head (void) const noexcept(noexcept(*std::declval<const iter_type>())) { return *start; }
+        inline constexpr decltype(auto) end (void) const noexcept { return end_; }
+
+        inline constexpr decltype(auto) cend (void) const noexcept { return end_; }
         
-        inline constexpr decltype(auto) tail (void) const noexcept { return range (std::next(start), end); }
-    
-        inline constexpr decltype(auto) tail (diff_type const n) const noexcept { return range (std::next(start, n), end); }
-
-        inline constexpr decltype(auto) length (void) const noexcept { return std::distance (start, end); }
+        inline constexpr decltype(auto) head (void) const noexcept(noexcept(*std::declval<const iter_type>())) { return *begin_; }
         
-        inline constexpr decltype(auto) is_empty (void) const noexcept { return not (valid && start != end); }
-
-        inline constexpr decltype(auto) is_valid (void) const noexcept { return valid; }
+        inline constexpr decltype(auto) tail (void) const noexcept { return range (std::next(begin_), end_); }
     
+        inline constexpr decltype(auto) tail (diff_type const n) const noexcept { return range (std::next(begin_, n), end_); }
+
+        inline constexpr decltype(auto) length (void) const noexcept { return std::distance (begin_, end_); }
+        
+        inline constexpr decltype(auto) is_empty (void) const noexcept { return not (valid_ && begin_ != end_); }
+
+        inline constexpr decltype(auto) is_valid (void) const noexcept { return valid_; }
+   
     private:
-        bool valid;
-        iter_type const start;
-        iter_type const end; 
+        bool valid_;
+        iter_type const begin_;
+        iter_type const end_;
     };
 } // namespace core
 } // namespace rpc

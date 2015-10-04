@@ -32,7 +32,7 @@ namespace basic
             .parse = [=](typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::range_type const& r)
             {
                 std::match_results<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::range_type::iter_type> matches;
-                if (std::regex_search (r.getstart(), r.getend(), matches, rx, std::regex_constants::match_continuous)) {
+                if (std::regex_search (r.begin(), r.end(), matches, rx, std::regex_constants::match_continuous)) {
                     return OT
                         {
                             std::make_pair (matches.str (0), r.tail (matches.length(0)))
@@ -53,7 +53,7 @@ namespace basic
             .parse = [=](typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::range_type const& r)
             {
                 std::match_results<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::range_type::iter_type> matches;
-                if (std::regex_search (r.getstart(), r.getend(), matches, rx, std::regex_constants::match_continuous)) {
+                if (std::regex_search (r.begin(), r.end(), matches, rx, std::regex_constants::match_continuous)) {
                     return OT
                         {
                             std::make_pair (matches.str (0), r.tail (matches.length(0)))

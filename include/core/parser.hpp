@@ -52,8 +52,6 @@ namespace detail
         failure (std::string && s) : msg(s) {}
         failure (failure const& f) : msg(f.msg) {}
 
-        
-
         std::string const msg;
     };
 
@@ -65,10 +63,13 @@ namespace detail
     template <typename It>
     struct empty_result {};
 
-    template <typename IterT, typename ValT, typename TokenT = typename std::iterator_traits<IterT>::value_type>
+    template <typename IterT, typename ValT,
+        typename TokenT = typename std::iterator_traits<IterT>::value_type,
+        typename RangeT = range<IterT>,
+        typename = std::enable_if_t<RangeT::is_range_type::value>>
     struct parser
     {
-        using range_type  = range<IterT>;
+        using range_type  = RangeT;
         using value_type  = ValT;
         using empty_type  = empty_result<ValT>; 
         using token_type  = TokenT;
