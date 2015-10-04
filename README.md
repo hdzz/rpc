@@ -231,7 +231,3 @@ failure looks like:
     expected [(some) [[(many) [whitespace]] //then// [integer]]]
 ```
 
-## LICENSE
-
-Please see LICENSE.md included in this directory (`rpc/`)
-
