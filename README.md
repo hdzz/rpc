@@ -145,7 +145,12 @@ int main (void)
     for (auto const& e : basic::words<iter_type<char>>.parse (parse_text_words))
         if (strparser<std::string, char>::is_result (e))
             std::cout << '\t' << strparser<std::string, char>::result_value(e) << std::endl;
-    
+ 
+    std::cout << "failure looks like:" << std::endl;
+
+    auto f = basic::integers<iter_type<char>>.parse (std::string(""));
+    std::cout << '\t' << strparser<int, char>::failure_message (f.front()) << std::endl;
+   
     std::exit (0);
 }
 ```
@@ -208,6 +213,8 @@ words:
     the
     lazy
     dog
+failure looks like:
+    expected [(some) [[(many) [whitespace]] //then// [integer]]]
 ```
 
 ## LICENSE
