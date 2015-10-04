@@ -5,18 +5,26 @@ This is an implementation of monadic parser combinators for C++14 using the
 Much of this project's development was inspired and guided by [`Hutton, Graham, & Meijer, Erik. (1996). Monadic Parser
 Combinators.`](http://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf).
 
+## Features
+
+- Error reporting format designed to be parsed easily and pretty printed if desired.
+
 ## Notes
 
 This project is still in development; there may be breaking changes made to core types for some time yet.
 To that end, here is what still needs to be done and what has been completed already.
 
 ### To be completed
-- Combinators:
-    - `chainl`; `chainl1`; `chainr`; `chainr1`
-- Better parser descriptions for constructing failure messages.
-- Add infrastructure for creating ASTs from parse trees.
-- Documentation (maybe in wiki pages?).
-- Unit testing for each basic parser and combinator listed below.
+- [] Combinators:
+    - [] `chainl`
+    - [] `chainl1`;
+    - [] `chainr`
+    - [] `chainr1`
+- [x] Better parser descriptions for constructing failure messages.
+- [] Add infrastructure for creating ASTs from parse trees.
+- [] Add parser and pretty printer for error messages.
+- [] Documentation (maybe in wiki pages?).
+- [] Unit testing for each basic parser and combinator listed below.
 
 ### Totally (or mostly) implemented
 - Core types (`core/range`, `core/parser`):
