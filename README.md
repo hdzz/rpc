@@ -1,6 +1,6 @@
 # rpc - (Real) Parser Combinators for C++14
 
-This is an implementation of monadic parser combinators for C++14 using the
+This is an implementation of monadic parser combinators in continuation passing style for C++14 using the
 [`funktional`](https://github.com/daltonwoodard/funktional) C++14 library.
 Much of this project's development was inspired and guided by the following papers:
 
@@ -11,6 +11,21 @@ Language Descriptions Tools and Applications LDTA 2009.](http://ldta.info/2009/l
 
 Currently the goal is to transform the existing code to use continuation passing style and implement the GLL parsing
 algorithm for the core parser combinators. This work is currently being done on the `continuations` branch.
+
+## Some Points on Design
+
+### Why Continuation Passing Style? (tldr; incidental structure is bad)
+
+Using CPS in a parser combinator framework, while initially more difficult with respect to syntactic constructs,
+provides an extremely convenient means of avoiding incidental data structures in code. The benefit of this is mainly
+that it becomes unnecessary to construct temporary parse result lists, which saves time and space,
+and we can instead merely append to an accumulator that the combinators seamlessly thread through a parser. This may
+also make it easier for compilers to optimize parser code, as the vast majority of the source is reduced to function calls,
+rather than building up data structures to be returned and modified explicitly by the programmer.
+
+From an efficiency standpoint, there is good evidence that writing parser combinator frameworks in continuation
+passing style can produce significantly faster and more space efficient code; see
+[Efficient Combinator Parsers](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.36.2596).
 
 ## Notes
 
