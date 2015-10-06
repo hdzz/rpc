@@ -24,30 +24,30 @@ namespace core
     // to handle parse errors, simply inherit from this struct
     // and define the appropriate methods.
     //
-    template <typename IterT,
+    template <typename It,
         typename = std::enable_if_t
             <std::is_base_of<std::bidirectional_iterator_tag,
-                             typename std::iterator_traits<IterT>::iterator_category>::value>>
+                             typename std::iterator_traits<It>::iterator_category>::value>>
     struct range
     {
     public:
-        using iter_type   = IterT;
+        using iter_type   = It;
         using iter_traits = std::iterator_traits<iter_type>;
         using token_type  = typename iter_traits::value_type;
         using diff_type   = typename iter_traits::difference_type;
         
         struct is_range_type : public std::true_type {};
         
-        range (void) { static_assert (sizeof(IterT) == 0, "ranges are not defaul constructable"); }
+        range (void) { static_assert (sizeof(iter_type) == 0, "ranges are not defaul constructable"); }
     
         template <typename C,
             typename = std::enable_if_t<fnk::type_support::container_traits<C>::is_container::value>,
             typename = std::enable_if_t<std::is_same<token_type, typename fnk::type_support::container_traits<C>::value_type>::value>>
-        constexpr range (C const& c) noexcept : valid_(not c.empty()), begin_(c.begin()), end_(c.end()) {}
+        constexpr range (C const& c) noexcept : valid_(not c.empty()), begin_(c.cbegin()), end_(c.cend()) {}
 
-        template <typename It,
-            typename = std::enable_if_t<std::is_base_of<iter_type, It>::value>>
-        constexpr range (It const& b, It const& e) noexcept : valid_(0 < std::distance(b, e)), begin_(b), end_(e) {}
+        template <typename I,
+            typename = std::enable_if_t<std::is_base_of<iter_type, I>::value>>
+        constexpr range (I const& b, I const& e) noexcept : valid_(0 < std::distance(b, e)), begin_(b), end_(e) {}
 
         inline constexpr decltype(auto) begin (void) const noexcept { return begin_; }
 
@@ -73,6 +73,15 @@ namespace core
         bool valid_;
         iter_type const begin_;
         iter_type const end_;
+    };
+
+    template <typename R>
+    struct range_traits
+    {
+        using iter_type   = typename R::iter_type;
+        using iter_traits = typename R::iter_traits;
+        using token_type  = typename iter_traits::value_type;
+        using diff_type   = typename iter_traits::difference_type;
     };
 } // namespace core
 } // namespace rpc

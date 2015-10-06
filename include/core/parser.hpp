@@ -9,10 +9,10 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
+#include <deque>
 #include <ostream>
 #include <type_traits>
 #include <functional>
-#include <list>
 
 #include "range.hpp"
 
@@ -44,58 +44,149 @@ namespace detail
         PARSE_FAILURE      = 2
     };
 } // namespace detail
- 
-    struct failure
+
+    struct failure_message
     {
-        failure (void) : msg("failure") {}
-        failure (std::string const& s) : msg(s) {}
-        failure (std::string && s) : msg(s) {}
-        failure (failure const& f) : msg(f.msg) {}
+        failure_message (void)                     : msg("failure") {}
+        failure_message (std::string const& s)     : msg(s) {}
+        failure_message (std::string && s)         : msg(s) {}
+        failure_message (failure_message const& f) : msg(f.msg) {}
 
         std::string const msg;
     };
 
-    std::ostream& operator<< (std::ostream& os, failure const& f)
+    std::ostream& operator<< (std::ostream& os, failure_message const& f)
     {
         return (os << f.msg);
     }
 
-    template <typename It>
-    struct empty_result {};
+    //
+    // Represents parse failure.
+    //
+    template <typename R>
+    using failure = typename std::pair<failure_message, R>::type;
 
-    template <typename IterT, typename ValT,
-        typename TokenT = typename std::iterator_traits<IterT>::value_type,
-        typename RangeT = range<IterT>,
-        typename = std::enable_if_t<RangeT::is_range_type::value>>
+    template <typename T>
+    struct empty
+    {
+        template <typename U>
+        using rebind = empty<U>;
+
+        template <typename U>
+        operator U() const noexcept
+        {
+            return rebind<U>{};
+        }
+    };
+
+    template <typename T, typename R>
+    using empty_result = typename std::pair<empty<T>, R>::type;
+
+    template <typename V, typename R>
+    using value_result = typename std::pair<V, R>::type;
+
+    template <typename It, typename V, typename R = range<It>> 
+    struct parser;
+
+namespace detail
+{
+    template <typename It, typename V, typename R>
+    inline decltype(auto) result_range (typename parser<It, V, R>::result_type const& r)
+    {
+        return parser<It, V, R>::result_range (r);
+    }
+    
+    template <typename It, typename V, typename R>
+    inline decltype(auto) insert_result (typename parser<It, V, R>::result_type && r,
+                                          typename parser<It, V, R>::accumulator_type & acc)
+    {
+        acc.emplace_back (r);
+        return acc;
+    }
+ 
+    template <typename It, typename V, typename R>
+    inline decltype(auto) insert_result (typename parser<It, V, R>::result_type const& r,
+                                          typename parser<It, V, R>::accumulator_type & acc)
+    {
+        acc.push_back (r);
+        return acc;
+    }
+ 
+    template <typename It, typename V, typename R>
+    struct default_parse
+    {
+        using parser_type = typename parser<It, V, R>::type;
+        using range_type  = typename parser_type::range_type;
+        using result_type = typename parser_type::result_type;
+        using empty_type  = typename parser_type::empty_type;
+
+        static inline result_type parse (range_type const& r)
+        {
+            return empty_type {empty<V>{}, r};
+        };
+    };
+ 
+    template <typename It, typename V, typename R>
+    struct default_continuation
+    {
+        using parser_type      = typename parser<It, V, R>::type;
+        using result_type      = typename parser_type::result_type;
+        using accumulator_type = typename parser_type::accumulator_type;
+
+        static inline accumulator_type cont (parser_type const& /*succ*/,
+                                             parser_type const& /*next*/,
+                                             accumulator_type & acc)
+        {
+            return insert_result (default_parse<It, V, R>::parse (result_range (acc.back())), acc);
+        };
+    };
+
+    //
+    // Bottoms out a call chain; continuation returns the accumulator.
+    //
+    template <typename It, typename V, typename R>
+    parser<It, V, R> bot
+    {
+        .description = "bottom",
+        .parse = default_parse <It, V, R>::parse
+        .cont  = default_continuation <It, V, R>::cont
+    };
+} // namespace detail
+
+    template <typename It, typename V, typename R> 
     struct parser
     {
-        using range_type  = RangeT;
-        using value_type  = ValT;
-        using empty_type  = empty_result<ValT>; 
-        using token_type  = TokenT;
-        using result_type = fnk::adt<std::pair<value_type, range_type>, std::pair<empty_type, range_type>, failure>;
+        using type        = parser<It, V, R>;
+        using range_type  = R;
+        using token_type  = typename range_traits <range_type>::token_type;
+        using value_type  = V;
+        using fail_type   = failure <R>;
+        using empty_type  = empty_result <V, R>;
+        using value_result_type = value_result <V, R>;
+        using result_type       = fnk::adt <value_result_type, empty_type, fail_type>;
+        using accumulator_type  = std::deque <std::pair <result_type, range_type> const>;
 
-        template <typename S, typename U>
-        using rebind = parser<S, U>;
+        template <typename I, typename U, typename S = range<I>>
+        using rebind = parser<I, U, S>;
 
-        using parse_type = std::function<std::list<result_type>(range_type const&)>;
-     
-        parse_type const parse;
         std::string const description;
-     
-        inline decltype(auto) operator() (range_type const& r)
-        {
-            return parse (r); 
-        }
+        std::function<result_type (range_type const&)> const parse;
+        std::function<accumulator_type (parser<It, V, R> const&, parser<It, V, R> const&, accumulator_type const&)> const cont
+            = detail::default_continuation<It, V, R>::cont;
 
-        static inline decltype(auto) is_parse_success (std::list<result_type> const& l)
+        inline decltype(auto) operator() (parser<It, V, R> const& succ, parser<It, V, R> const& next, accumulator_type const& a)
         {
-            return is_result (l.front());
+            return cont (succ, next, detail::insert_result (parse (result_range (a.back())), a));
+        }
+ 
+        static inline decltype(auto) is_parse_success (result_type const& r)
+        {
+            return is_result (r);
         }
     
-        static inline decltype(auto) is_parse_failure (std::list<result_type> const& l)
+        static inline decltype(auto) is_parse_failure (result_type const& r)
         {
-            return is_failure (l.front());
+            return is_failure (r);
         }
 
         static inline decltype(auto) is_result (result_type const& r)
@@ -118,125 +209,69 @@ namespace detail
             return r.type_index() == detail::PARSE_FAILURE;
         }
 
-        static inline decltype(auto) result (result_type const& r)
+        static inline decltype(auto) value_result (result_type const& r)
         {
-            return r.template value<std::pair<value_type, range_type>>();
+            return r.template value<value_result_type>();
         }
         
         static inline decltype(auto) empty_result (result_type const& r)
         {
-            return r.template value<std::pair<empty_type, range_type>>();
+            return r.template value<empty_type>();
+        }
+        
+        static inline decltype(auto) failure_result (result_type const& r)
+        {
+            return r.template value<fail_type>();
         }
 
-        static inline decltype(auto) result_value (result_type const& r)
-        {
-            return result(r).first;
-        }
- 
         static inline decltype(auto) result_range (result_type const& r)
         {
-            return is_value_result(r) ? result(r).second : empty_result(r).second;
-        }
-        
-        static inline decltype(auto) failure_message (result_type const& r)
-        {
-           return r.template value<failure>();
-        }
-
-        static inline decltype(auto) values (std::list<result_type> const& l)
-        {
-            std::list<ValT> out;
-            for (auto const& e : l)
-                if (is_value_result(e))
-                    fnk::type_support::container_traits<decltype(out)>::insert (out, result_value (e));
-            return out;
+            return is_value_result (r) ? value_result (r).second 
+                                       : is_empty_result (r) ? empty_result (r).second
+                                                             : failure_result (r).second;
         }
  
-        static inline decltype(auto) failure_messages (std::list<result_type> const& l)
+        static inline decltype(auto) failure_message (result_type const& r)
         {
-            std::list<failure> out;
-            for (auto const& e : l)
-                if (is_failure(e))
-                    fnk::type_support::container_traits<decltype(out)>::insert (out, failure_message (e));
-            return out;
+           return failure_result(r).first;
         }
     };
 
-    template <typename It, typename V>
-    struct parser<It const&, V const> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It const, V const&> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It&, V const> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It const, V&> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It const&, V> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It, V const&> : public parser<It, V> {};
-   
-    template <typename It, typename V>
-    struct parser<It&, V> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It, V&> : public parser<It, V> {}; 
-    
-    template <typename It, typename V>
-    struct parser<It&&, V> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It, V&&> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It&&, V const> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It const, V&&> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It&&, V const&> : public parser<It, V> {};
-    
-    template <typename It, typename V>
-    struct parser<It const&, V&&> : public parser<It, V> {};
-
-    template <typename V>
+    template <typename T>
     struct is_parser_instance : public std::false_type {};
 
-    template <typename It, typename V>
-    struct is_parser_instance<parser<It, V>> : public std::true_type {};
+    template <typename It, typename V, typename R>
+    struct is_parser_instance<parser<It, V, R>> : public std::true_type {};
 
-    template <typename It, typename V>
-    struct is_parser_instance<parser<It, V>&> : public std::true_type {};
+    template <typename It, typename V, typename R>
+    struct is_parser_instance<parser<It, V, R>&> : public std::true_type {};
 
-    template <typename It, typename V>
-    struct is_parser_instance<parser<It, V> const> : public std::true_type {};
+    template <typename It, typename V, typename R>
+    struct is_parser_instance<parser<It, V, R> const> : public std::true_type {};
 
-    template <typename It, typename V>
-    struct is_parser_instance<parser<It, V> const&> : public std::true_type {};
+    template <typename It, typename V, typename R>
+    struct is_parser_instance<parser<It, V, R> const&> : public std::true_type {};
 
-    template <typename It, typename V>
-    struct is_parser_instance<parser<It, V> &&> : public std::true_type {};
+    template <typename It, typename V, typename R>
+    struct is_parser_instance<parser<It, V, R> &&> : public std::true_type {};
 
-    template <typename P,
-        typename = std::enable_if_t<is_parser_instance<P>::value>>
+    template <typename P, typename = std::enable_if_t<is_parser_instance<P>::value>>
     struct parser_traits
     {
-        using range_type  = typename std::decay_t<P>::range_type;
-        using value_type  = typename std::decay_t<P>::value_type;
-        using token_type  = typename std::decay_t<P>::token_type;
-        using result_type = typename std::decay_t<P>::result_type;
-
-        using parse_type = typename std::decay_t<P>::parse_type;
+        using type        = typename std::decay_t<P>::type;
+        using range_type  = typename type::range_type;
+        using token_type  = typename range_traits <range_type>::token_type;
+        using value_type  = typename type::value_type;
+        using fail_type   = failure <range_type>;
+        using empty_type  = empty_result <value_type, range_type>;
+        using value_result_type = value_result <value_type, range_type>;
+        using result_type       = fnk::adt <value_result_type, empty_type, fail_type>;
+        using accumulator_type  = std::deque <std::pair <result_type, range_type> const>;
         
-        template <typename S, typename U>
-        using rebind = typename std::decay_t<P>::template rebind<S, U>;
+        template <typename I, typename U, typename R = range<I>>
+        using rebind = typename std::decay_t<P>::template rebind<I, U, R>;
     };
-
+/*
     template <typename It, typename V>
     inline decltype(auto) override_description (parser<It, V> const& p, std::string const& new_description)
     {
@@ -246,11 +281,13 @@ namespace detail
             .description = new_description
         };
     }
+*/
 } // namespace core
 } // namespace rpc
 
 namespace fnk
 {
+/* to be rewritten later involving the continuations
     template <typename It, typename V>
     struct functor<rpc::core::parser<It, V>> : public default_functor<rpc::core::parser, It, V>
     { 
@@ -433,7 +470,7 @@ namespace fnk
         {
             return rpc::core::parser<It, V>
             {
-                .parse = [](typename rpc::core::parser<It, V>::range_type const& /*r*/)
+                .parse = [](typename rpc::core::parser<It, V>::range_type const& \r*\/)
                 {
                     return std::list<typename rpc::core::parser<It, V>::result_type> { rpc::core::failure{} };
                 },
@@ -486,6 +523,7 @@ namespace fnk
     struct additive_monad<rpc::core::parser<It, V> const&> : public additive_monad<rpc::core::parser<It, V>> {};
     template <typename It, typename V>
     struct additive_monad<rpc::core::parser<It, V> &&> : public additive_monad<rpc::core::parser<It, V>> {};
+*/
 } // namespace fnk
 
 #endif // ifndef PARSER_HPP
