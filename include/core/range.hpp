@@ -31,6 +31,7 @@ namespace core
     struct range
     {
     public:
+        using type        = range<It>;
         using iter_type   = It;
         using iter_traits = std::iterator_traits<iter_type>;
         using token_type  = typename iter_traits::value_type;
@@ -65,9 +66,9 @@ namespace core
 
         inline constexpr decltype(auto) length (void) const noexcept { return std::distance (begin_, end_); }
         
-        inline constexpr decltype(auto) is_empty (void) const noexcept { return not (valid_ && begin_ != end_); }
+        inline constexpr decltype(auto) empty (void) const noexcept { return not (valid_ && begin_ != end_); }
 
-        inline constexpr decltype(auto) is_valid (void) const noexcept { return valid_; }
+        inline constexpr decltype(auto) valid (void) const noexcept { return valid_; }
    
     private:
         bool valid_;

@@ -9,12 +9,12 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
-#include <deque>
-#include <ostream>
 #include <type_traits>
 #include <functional>
 
+#include "accumulator.hpp"
 #include "range.hpp"
+#include "result_type.hpp"
 
 #include "funktional/include/algebraic.hpp"
 #include "funktional/include/concat.hpp"
@@ -35,123 +35,61 @@ namespace rpc
 {
 namespace core
 {
-namespace detail
-{
-    enum
-    {
-        PARSE_RESULT       = 0,
-        PARSE_EMPTY_RESULT = 1,
-        PARSE_FAILURE      = 2
-    };
-} // namespace detail
-
-    struct failure_message
-    {
-        failure_message (void)                     : msg("failure") {}
-        failure_message (std::string const& s)     : msg(s) {}
-        failure_message (std::string && s)         : msg(s) {}
-        failure_message (failure_message const& f) : msg(f.msg) {}
-
-        std::string const msg;
-    };
-
-    std::ostream& operator<< (std::ostream& os, failure_message const& f)
-    {
-        return (os << f.msg);
-    }
-
-    //
-    // Represents parse failure.
-    //
-    template <typename R>
-    using failure = typename std::pair<failure_message, R>::type;
-
-    template <typename T>
-    struct empty
-    {
-        template <typename U>
-        using rebind = empty<U>;
-
-        template <typename U>
-        operator U() const noexcept
-        {
-            return rebind<U>{};
-        }
-    };
-
-    template <typename T, typename R>
-    using empty_result = typename std::pair<empty<T>, R>::type;
-
-    template <typename V, typename R>
-    using value_result = typename std::pair<V, R>::type;
-
     template <typename It, typename V, typename R = range<It>> 
     struct parser;
 
 namespace detail
 {
-    template <typename It, typename V, typename R>
-    inline decltype(auto) result_range (typename parser<It, V, R>::result_type const& r)
-    {
-        return parser<It, V, R>::result_range (r);
-    }
-    
-    template <typename It, typename V, typename R>
-    inline decltype(auto) insert_result (typename parser<It, V, R>::result_type && r,
-                                          typename parser<It, V, R>::accumulator_type & acc)
-    {
-        acc.emplace_back (r);
-        return acc;
-    }
- 
-    template <typename It, typename V, typename R>
-    inline decltype(auto) insert_result (typename parser<It, V, R>::result_type const& r,
-                                          typename parser<It, V, R>::accumulator_type & acc)
-    {
-        acc.push_back (r);
-        return acc;
-    }
- 
-    template <typename It, typename V, typename R>
-    struct default_parse
-    {
-        using parser_type = typename parser<It, V, R>::type;
-        using range_type  = typename parser_type::range_type;
-        using result_type = typename parser_type::result_type;
-        using empty_type  = typename parser_type::empty_type;
-
-        static inline result_type parse (range_type const& r)
-        {
-            return empty_type {empty<V>{}, r};
-        };
-    };
- 
-    template <typename It, typename V, typename R>
-    struct default_continuation
-    {
-        using parser_type      = typename parser<It, V, R>::type;
-        using result_type      = typename parser_type::result_type;
-        using accumulator_type = typename parser_type::accumulator_type;
-
-        static inline accumulator_type cont (parser_type const& /*succ*/,
-                                             parser_type const& /*next*/,
-                                             accumulator_type & acc)
-        {
-            return insert_result (default_parse<It, V, R>::parse (result_range (acc.back())), acc);
-        };
-    };
-
     //
-    // Bottoms out a call chain; continuation returns the accumulator.
+    // Bottoms out a call chain and returns the accumulator.
     //
     template <typename It, typename V, typename R>
     parser<It, V, R> bot
     {
-        .description = "bottom",
-        .parse = default_parse <It, V, R>::parse
-        .cont  = default_continuation <It, V, R>::cont
+        .description = "[bot]",
+        .parse = [] (typename parser<It, V, R>::accumulator_type & acc,
+                     parser<It, V, R> const& /*succ*/,
+                     parser<It, V, R> const& /*next*/)
+        {
+            return acc.insert (parse_result<V> {detail::botr<V>{}, acc.range()});
+        }
+    };
+    
+    //
+    // Tops the call chain.
+    //
+    template <typename It, typename V, typename R>
+    parser<It, V, R> top
+    {
+        .description = "[top]",
+        .parse = [] (typename parser<It, V, R>::accumulator_type & acc,
+                     parser<It, V, R> const& succ = bot<It, V, R>,
+                     parser<It, V, R> const& next = bot<It, V, R>)
+        {
+            return acc.insert (parse_result<V> {detail::topr<V>{}, acc.range()});
+        }
     };
 } // namespace detail
+
+    //
+    // Continues a parse chain when there is no available success continuation.
+    // This eventually forces a top-out.
+    //
+    template <typename It, typename V, typename R>
+    inline decltype(auto) continuation (parser<It, V, R> const& p,
+                                        typename parser<It, V, R>::accumulator_type & acc)
+    {
+        return is_success (acc.result()) ? p.parse (detail::top<It, V, R>, detail::top<It, V, R>, acc)
+                                         : acc;
+    }
+
+    //
+    // Applies parser to input range.
+    //
+    template <typename It, typename V, typename R>
+    inline decltype(auto) apply (parser<It, V, R> const& p, typename parser<It, V, R>::range_type const& r)
+    {
+    }
 
     template <typename It, typename V, typename R> 
     struct parser
@@ -160,81 +98,17 @@ namespace detail
         using range_type  = R;
         using token_type  = typename range_traits <range_type>::token_type;
         using value_type  = V;
-        using fail_type   = failure <R>;
-        using empty_type  = empty_result <V, R>;
-        using value_result_type = value_result <V, R>;
-        using result_type       = fnk::adt <value_result_type, empty_type, fail_type>;
-        using accumulator_type  = std::deque <std::pair <result_type, range_type> const>;
+        using fail_type   = failure_result;
+        using empty_type  = empty_result <V>;
+        using value_result_type = value_result <V>;
+        using result_type       = parse_result <V>;
+        using accumulator_type  = accumulator <It, V, R>;
 
         template <typename I, typename U, typename S = range<I>>
         using rebind = parser<I, U, S>;
 
         std::string const description;
-        std::function<result_type (range_type const&)> const parse;
-        std::function<accumulator_type (parser<It, V, R> const&, parser<It, V, R> const&, accumulator_type const&)> const cont
-            = detail::default_continuation<It, V, R>::cont;
-
-        inline decltype(auto) operator() (parser<It, V, R> const& succ, parser<It, V, R> const& next, accumulator_type const& a)
-        {
-            return cont (succ, next, detail::insert_result (parse (result_range (a.back())), a));
-        }
- 
-        static inline decltype(auto) is_parse_success (result_type const& r)
-        {
-            return is_result (r);
-        }
-    
-        static inline decltype(auto) is_parse_failure (result_type const& r)
-        {
-            return is_failure (r);
-        }
-
-        static inline decltype(auto) is_result (result_type const& r)
-        {
-            return r.type_index() == detail::PARSE_RESULT || r.type_index() == detail::PARSE_EMPTY_RESULT;
-        }
-        
-        static inline decltype(auto) is_value_result (result_type const& r)
-        {
-            return r.type_index() == detail::PARSE_RESULT;
-        }
-        
-        static inline decltype(auto) is_empty_result (result_type const& r)
-        {
-            return r.type_index() == detail::PARSE_EMPTY_RESULT;
-        }
-
-        static inline decltype(auto) is_failure (result_type const& r)
-        {
-            return r.type_index() == detail::PARSE_FAILURE;
-        }
-
-        static inline decltype(auto) value_result (result_type const& r)
-        {
-            return r.template value<value_result_type>();
-        }
-        
-        static inline decltype(auto) empty_result (result_type const& r)
-        {
-            return r.template value<empty_type>();
-        }
-        
-        static inline decltype(auto) failure_result (result_type const& r)
-        {
-            return r.template value<fail_type>();
-        }
-
-        static inline decltype(auto) result_range (result_type const& r)
-        {
-            return is_value_result (r) ? value_result (r).second 
-                                       : is_empty_result (r) ? empty_result (r).second
-                                                             : failure_result (r).second;
-        }
- 
-        static inline decltype(auto) failure_message (result_type const& r)
-        {
-           return failure_result(r).first;
-        }
+        std::function<accumulator_type (accumulator_type const&, type const&, type const&)> const parse;
     };
 
     template <typename T>
@@ -258,30 +132,29 @@ namespace detail
     template <typename P, typename = std::enable_if_t<is_parser_instance<P>::value>>
     struct parser_traits
     {
-        using type        = typename std::decay_t<P>::type;
+        using type        = P;
         using range_type  = typename type::range_type;
         using token_type  = typename range_traits <range_type>::token_type;
         using value_type  = typename type::value_type;
-        using fail_type   = failure <range_type>;
-        using empty_type  = empty_result <value_type, range_type>;
-        using value_result_type = value_result <value_type, range_type>;
-        using result_type       = fnk::adt <value_result_type, empty_type, fail_type>;
-        using accumulator_type  = std::deque <std::pair <result_type, range_type> const>;
-        
+        using fail_type   = typename type::fail_type;
+        using empty_type  = typename type::empty_type;
+        using value_result_type = typename type::value_result_type;
+        using result_type       = typename type::result_type;
+        using accumulator_type  = typename type::accumulator_type;
+
         template <typename I, typename U, typename R = range<I>>
         using rebind = typename std::decay_t<P>::template rebind<I, U, R>;
     };
-/*
-    template <typename It, typename V>
-    inline decltype(auto) override_description (parser<It, V> const& p, std::string const& new_description)
+    
+    template <typename It, typename V, typename R>
+    inline decltype(auto) override_description (parser<It, V, R> const& p, std::string const& new_description)
     {
-        return parser<It, V>
+        return parser<It, V, R>
         {
-            .parse = p.parse,
-            .description = new_description
+            .description = new_description,
+            .parse = p.parse
         };
     }
-*/
 } // namespace core
 } // namespace rpc
 
