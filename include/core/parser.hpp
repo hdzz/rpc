@@ -41,55 +41,32 @@ namespace core
 namespace detail
 {
     //
-    // Bottoms out a call chain and returns the accumulator.
+    // Bottoms out a call chain; returns the accumulator.
     //
     template <typename It, typename V, typename R>
     parser<It, V, R> bot
     {
         .description = "[bot]",
-        .parse = [] (typename parser<It, V, R>::accumulator_type & acc,
-                     parser<It, V, R> const& /*succ*/,
-                     parser<It, V, R> const& /*next*/)
+        .parse = [] (typename parser<It, V, R>::accumulator_type & acc)
         {
             return acc.insert (parse_result<V> {detail::botr<V>{}, acc.range()});
         }
     };
     
     //
-    // Tops the call chain.
+    // Tops the call chain; only used once at start of parse
+    // to initialize the accumulator.
     //
     template <typename It, typename V, typename R>
     parser<It, V, R> top
     {
         .description = "[top]",
-        .parse = [] (typename parser<It, V, R>::accumulator_type & acc,
-                     parser<It, V, R> const& succ = bot<It, V, R>,
-                     parser<It, V, R> const& next = bot<It, V, R>)
+        .parse = [] (typename parser<It, V, R>::accumulator_type & acc)
         {
             return acc.insert (parse_result<V> {detail::topr<V>{}, acc.range()});
         }
     };
 } // namespace detail
-
-    //
-    // Continues a parse chain when there is no available success continuation.
-    // This eventually forces a top-out.
-    //
-    template <typename It, typename V, typename R>
-    inline decltype(auto) continuation (parser<It, V, R> const& p,
-                                        typename parser<It, V, R>::accumulator_type & acc)
-    {
-        return is_success (acc.result()) ? p.parse (detail::top<It, V, R>, detail::top<It, V, R>, acc)
-                                         : acc;
-    }
-
-    //
-    // Applies parser to input range.
-    //
-    template <typename It, typename V, typename R>
-    inline decltype(auto) apply (parser<It, V, R> const& p, typename parser<It, V, R>::range_type const& r)
-    {
-    }
 
     template <typename It, typename V, typename R> 
     struct parser
@@ -108,7 +85,7 @@ namespace detail
         using rebind = parser<I, U, S>;
 
         std::string const description;
-        std::function<accumulator_type (accumulator_type const&, type const&, type const&)> const parse;
+        std::function<accumulator_type (accumulator_type const&)> const parse;
     };
 
     template <typename T>
