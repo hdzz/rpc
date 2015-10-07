@@ -137,12 +137,12 @@ namespace fnk
         template <class F, class B>
         static constexpr decltype(auto) foldr (F && f, B && b, C const& c)
         {
-            std::function<B(B const&)> id ([](B const& b_tmp) -> decltype(auto) { return b_tmp; });
-            auto invert ([&](std::function<B(B const&)>& g, value_type const& vt_tmp)
-            { 
-                return [&,g](B const& b_tmp) { return g(f(vt_tmp, b_tmp)); };
-            });
-            return fnk::foldable<C>::foldl (invert, id, c) (std::forward<B>(b)); 
+            auto it (c.crbegin());
+            auto end (c.crend());
+            auto b_ (std::forward<std::remove_cv_t<B>>(b));
+            for (; it != end; ++it)
+                b_ = f (b_, *it);
+            return b_;
         }
 
         struct is_rfoldable_instance : public std::true_type {};
