@@ -19,18 +19,18 @@ decltype(auto) repeat_string_tup (std::tuple<std::string const, std::size_t cons
 
 int main (void)
 {
-    std::list<std::size_t const> li { 0, 1, 2, 3, 4 };
-    std::list<std::string const> ls { "nothing", "test", "string", "repeat", "fourtimes" };
+    std::list<std::size_t const> li{0, 1, 2, 3, 4};
+    std::list<std::string const> ls{"nothing", "test", "string", "repeat", "fourtimes"};
 
     //
     // Two ways to perform the same operation
     //
-    for (auto const& e : fnk::map (&repeat_string_tup, fnk::zip (ls, li)))
+    for (auto const &e : fnk::map(&repeat_string_tup, fnk::zip(ls, li)))
         std::cout << e << std::endl;
 
-    for (auto const& e : fnk::zip_with (&repeat_string, ls, li))
-        std::cout << e << std::endl; 
-    
+    for (auto const &e : fnk::zip_with(&repeat_string, ls, li))
+        std::cout << e << std::endl;
+
     return 0;
 }
 
