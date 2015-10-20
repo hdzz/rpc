@@ -4,30 +4,17 @@
 
 base=..
 include_dir=$(base)/include
-test_dir=.
 
-source_dir=$(test_dir)/src
-build_dir=$(test_dir)/build
+test_dirs=$(wildcard ./*.test)
 
-sources=$(wildcard $(source_dir)/*.cpp)
-builds=$(patsubst $(source_dir)/%, $(build_dir)/%, $(sources:.cpp=.out))
+.PHONY: all setup clean
 
-CXX=clang++
-std=c++14
-iflags=-I$(base) -I$(include_dir) -I$(base)/funktional/include
-cxxflags=-std=$(std) $(OPTFLAGS) -g3 -O0 -Werror -Wall -Wextra -Wshadow -Wstrict-aliasing -Wcast-align -fpermissive
-
-.PHONY: all setup clean clean-all
-
-all: setup $(builds)
+all: setup
 
 setup:
-	@mkdir -p $(build_dir)
-
-$(build_dir)/%.out : $(source_dir)/%.cpp
-	$(CXX) $(iflags) $(cxxflags) $^ -o $@
+	@$(foreach test, $(test_dirs), make -C $(test); )
 
 clean:
 	@rm -rf *.log *.dSYM *.DS_Store
-	@rm -rf $(build_dir)
+	@$(foreach test, $(test_dirs), make -C $(test) clean; )
 
