@@ -21,21 +21,28 @@ namespace detail
     struct remove_class_signature {};
 
     template<typename C, typename R, typename... A>
-    struct remove_class_signature<R(C::*)(A...)>                { using type = R(A...); };
+    struct remove_class_signature<R(C::*)(A...)>
+        { using type = R(A...); };
     
     template<typename C, typename R, typename... A>
-    struct remove_class_signature<R(C::*)(A...) const>          { using type = R(A...); };
+    struct remove_class_signature<R(C::*)(A...) const>
+        { using type = R(A...); };
     
     template<typename C, typename R, typename... A>
-    struct remove_class_signature<R(C::*)(A...) volatile>       { using type = R(A...); };
+    struct remove_class_signature<R(C::*)(A...) volatile>
+        { using type = R(A...); };
     
     template<typename C, typename R, typename... A>
-    struct remove_class_signature<R(C::*)(A...) const volatile> { using type = R(A...); };
+    struct remove_class_signature<R(C::*)(A...) const volatile>
+        { using type = R(A...); };
 
     template<typename T>
     struct call_type
     {
-        using type = typename remove_class_signature<decltype(&std::remove_reference<T>::type::operator())>::type;
+        using type =
+            typename remove_class_signature
+                <decltype(&std::remove_reference<T>::type::operator())>
+                ::type;
     };
     
     template<typename R, typename... A>
@@ -70,22 +77,27 @@ namespace detail
 
     // function pointer types
     template <typename R, typename ... Args>
-    struct function_traits<R(*)(Args...)> : public function_traits<R(Args...)> {};
+    struct function_traits<R(*)(Args...)>
+        : public function_traits<R(Args...)> {};
 
     template <typename R, typename ... Args>
-    struct function_traits<R(&)(Args...)> : public function_traits<R(Args...)> {};
+    struct function_traits<R(&)(Args...)>
+        : public function_traits<R(Args...)> {};
 
     // member function types
     template <class C, typename R, typename ... Args>
-    struct function_traits<R(C::*)(Args...)> : public function_traits<R(C&,Args...)> {};
+    struct function_traits<R(C::*)(Args...)>
+        : public function_traits<R(C&,Args...)> {};
 
     // const member function pointer types
     template <class C, typename R, typename ... Args>
-    struct function_traits<R(C::*)(Args...) const> : public function_traits<R(C&, Args...)> {};
+    struct function_traits<R(C::*)(Args...) const>
+        : public function_traits<R(C&, Args...)> {};
 
     // member object pointer types
     template <class C, typename R>
-    struct function_traits<R(C::*)> : public function_traits<R(C&)> {};
+    struct function_traits<R(C::*)>
+        : public function_traits<R(C&)> {};
 
     // function object types
     template <class F>
@@ -114,4 +126,3 @@ namespace detail
 } // namespace fnk
 
 #endif // ifndef FUNCTION_TRAITS_HPP
-
