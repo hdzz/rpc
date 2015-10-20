@@ -24,42 +24,8 @@ namespace detail
     {
         PARSE_VALUE   = 0,
         PARSE_EMPTY   = 1,
-        PARSE_BOT     = 2,
-        PARSE_TOP     = 3,
-        PARSE_FAILURE = 4
+        PARSE_FAILURE = 2
     };
-
-    template <typename T>
-    struct botr
-    {
-        template <typename U>
-        using rebind = botr<U>;
-
-        template <typename U>
-        operator U() const noexcept
-        {
-            return rebind<U>{};
-        }
-    };
- 
-    template <typename T>
-    struct topr
-    {
-        template <typename U>
-        using rebind = topr<U>;
-
-        template <typename U>
-        operator U() const noexcept
-        {
-            return rebind<U>{};
-        }
-    };
-
-    template <typename T>
-    using bot_result = botr<T>;
-    
-    template <typename T>
-    using top_result = topr<T>;
 } // namespace detail
     
     struct failure_message
@@ -80,7 +46,7 @@ namespace detail
     //
     // Represents parse failure.
     //
-    using failure_result = failure_message;
+    using failure = failure_message;
  
     template <typename T>
     struct empty
@@ -98,16 +64,15 @@ namespace detail
     template <typename T>
     using empty_result = empty<T>;
 
-    template <typename T>
-    using value_result = T;
+    template <typename V>
+    using value_result = V;
 
     template <typename V>
     using parse_result =
-        fnk::adt <value_result<V>,
-                  empty_result<V>,
-                  detail::bot_result<V>,
-                  detail::top_result<V>,
-                  failure_result>;
+        fnk::adt <value_result<V>, empty_result<V>, failure>;
+
+    template <typename P>
+    using parse_result_value_type = typename P::template type <0>::type;
 
     template <typename V>
     inline decltype(auto) is_value (parse_result<V> const&);
@@ -146,30 +111,6 @@ namespace detail
     }   
     
     template <typename V>
-    inline decltype(auto) is_bot (parse_result<V> const& r)
-    {
-        return r.type_index() == detail::result_tags::PARSE_BOT;
-    }
-    
-    template <typename V>
-    inline decltype(auto) result_bot (parse_result<V> const& r)
-    {
-        return r.template value <detail::bot_result<V>>();
-    }   
- 
-    template <typename V>
-    inline decltype(auto) is_top (parse_result<V> const& r)
-    {
-        return r.type_index() == detail::result_tags::PARSE_TOP;
-    }
-    
-    template <typename V>
-    inline decltype(auto) result_top (parse_result<V> const& r)
-    {
-        return r.template value <detail::top_result<V>>();
-    }   
- 
-    template <typename V>
     inline decltype(auto) is_failure (parse_result<V> const& r)
     {
         return r.type_index() == detail::result_tags::PARSE_FAILURE;
@@ -178,7 +119,13 @@ namespace detail
     template <typename V>
     inline decltype(auto) result_failure (parse_result<V> const& r)
     {
-        return r.template value <failure_result>();
+        return r.template value <failure>();
+    }
+    
+    template <typename V>
+    inline decltype(auto) result_failure_message (parse_result<V> const& r)
+    {
+        return r.template value <failure>().msg;
     }   
 } // namespace core
 } // namespace rpc

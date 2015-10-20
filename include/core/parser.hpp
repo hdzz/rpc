@@ -9,6 +9,7 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
+#include <algorithm>
 #include <type_traits>
 #include <functional>
 
@@ -18,6 +19,7 @@
 
 #include "funktional/include/algebraic.hpp"
 #include "funktional/include/concat.hpp"
+#include "funktional/include/filterable.hpp"
 #include "funktional/include/mappable.hpp"
 
 #include "funktional/include/alternative.hpp"
@@ -35,47 +37,22 @@ namespace rpc
 {
 namespace core
 {
+    enum class status : bool
+    {
+        SUCCESS = true,
+        FAILURE = false
+    };
+
     template <typename It, typename V, typename R = range<It>> 
-    struct parser;
-
-namespace detail
-{
-    //
-    // Bottoms out a call chain; returns the accumulator.
-    //
-    template <typename It, typename V, typename R>
-    parser<It, V, R> bot
-    {
-        .description = "[bot]",
-        .parse = [] (typename parser<It, V, R>::accumulator_type & acc)
-        {
-            return acc.insert (parse_result<V> {detail::botr<V>{}, acc.range()});
-        }
-    };
-    
-    //
-    // Tops the call chain; only used once at start of parse
-    // to initialize the accumulator.
-    //
-    template <typename It, typename V, typename R>
-    parser<It, V, R> top
-    {
-        .description = "[top]",
-        .parse = [] (typename parser<It, V, R>::accumulator_type & acc)
-        {
-            return acc.insert (parse_result<V> {detail::topr<V>{}, acc.range()});
-        }
-    };
-} // namespace detail
-
-    template <typename It, typename V, typename R> 
     struct parser
     {
         using type        = parser<It, V, R>;
+        using iter_type   = It;
         using range_type  = R;
-        using token_type  = typename range_traits <range_type>::token_type;
+        using token_type  = 
+            typename std::iterator_traits<iter_type>::value_type;
         using value_type  = V;
-        using fail_type   = failure_result;
+        using fail_type   = failure;
         using empty_type  = empty_result <V>;
         using value_result_type = value_result <V>;
         using result_type       = parse_result <V>;
@@ -85,31 +62,38 @@ namespace detail
         using rebind = parser<I, U, S>;
 
         std::string const description;
-        std::function<accumulator_type (accumulator_type const&)> const parse;
+        std::function<accumulator_type & (accumulator_type &)> const parse;
     };
 
     template <typename T>
     struct is_parser_instance : public std::false_type {};
 
     template <typename It, typename V, typename R>
-    struct is_parser_instance<parser<It, V, R>> : public std::true_type {};
+    struct is_parser_instance<parser<It, V, R>>
+        : public std::true_type {};
 
     template <typename It, typename V, typename R>
-    struct is_parser_instance<parser<It, V, R>&> : public std::true_type {};
+    struct is_parser_instance<parser<It, V, R>&>
+        : public std::true_type {};
 
     template <typename It, typename V, typename R>
-    struct is_parser_instance<parser<It, V, R> const> : public std::true_type {};
+    struct is_parser_instance<parser<It, V, R> const>
+        : public std::true_type {};
 
     template <typename It, typename V, typename R>
-    struct is_parser_instance<parser<It, V, R> const&> : public std::true_type {};
+    struct is_parser_instance<parser<It, V, R> const&>
+        : public std::true_type {};
 
     template <typename It, typename V, typename R>
-    struct is_parser_instance<parser<It, V, R> &&> : public std::true_type {};
+    struct is_parser_instance<parser<It, V, R> &&>
+        : public std::true_type {};
 
-    template <typename P, typename = std::enable_if_t<is_parser_instance<P>::value>>
+    template <typename P,
+              typename = std::enable_if_t<is_parser_instance<P>::value>>
     struct parser_traits
     {
-        using type        = P;
+        using type        = std::decay_t<P>;
+        using iter_type   = typename type::iter_type;
         using range_type  = typename type::range_type;
         using token_type  = typename range_traits <range_type>::token_type;
         using value_type  = typename type::value_type;
@@ -124,7 +108,8 @@ namespace detail
     };
     
     template <typename It, typename V, typename R>
-    inline decltype(auto) override_description (parser<It, V, R> const& p, std::string const& new_description)
+    inline decltype(auto) override_description
+        (parser<It, V, R> const& p, std::string const& new_description)
     {
         return parser<It, V, R>
         {
@@ -132,61 +117,126 @@ namespace detail
             .parse = p.parse
         };
     }
+
+    template <typename It, typename V, typename R>
+    inline decltype(auto) parse
+        (parser<It, V, R> const& p,
+         typename parser<It, V, R>::range_type const& r)
+    {
+        typename parser<It, V, R>::accumulator_type acc {empty<V>{}, r};
+        auto stat (p.parse (acc));
+        return std::make_pair (stat, acc);
+    }
+
+    template <typename A>
+    inline bool parse_success (A const& acc, std::size_t const n = 0)
+    {
+        return is_success (acc.result (n));
+    }
+ 
+    template <typename A>
+    inline decltype(auto) torange (A const& acc, std::size_t const n = 0)
+    {
+        return acc.range (n);
+    }
+ 
+    template <typename A>
+    inline decltype(auto) torange_tail (A const& acc, std::size_t const n = 0)
+    {
+        return acc.range_tail (n);
+    }
+ 
+    template <typename A>
+    inline decltype(auto) toresult (A const& acc, std::size_t const n = 0)
+    {
+        return acc.result (n);
+    }
+    
+    template <typename A>
+    inline decltype(auto) toresult_value (A const& acc, std::size_t const n = 0)
+    {
+        return result_value (acc.result (n));
+    }
+    
+    template <typename A>
+    inline decltype(auto) toresult_failure (A const& acc, std::size_t const n = 0)
+    {
+        return result_failure (acc.result (n));
+    }
+/* 
+    template <typename V, typename A>
+    inline decltype(auto) values (A const& acc, std::size_t const n = 0)
+    {
+        using ResT = typename accumulator_traits<A>::result_type;
+        using RngT = typename accumulator_traits<A>::range_type;
+
+        auto vs (fnk::map<decltype(result_value<V>)>
+            (result_value<V>,
+             fnk::filter<decltype(is_value<V>)>
+                (is_value<V>,
+                 fnk::map
+                    ([](std::pair<ResT, RngT> const& r) { return r.first; }, acc.data ()))));
+        std::reverse (vs.begin(), vs.end());
+        return vs;
+    }
+    
+    template <typename V, typename A>
+    inline decltype(auto) values (std::pair<status, A> const& pres)
+    {
+        using ResT = typename accumulator_traits<A>::result_type;
+        using RngT = typename accumulator_traits<A>::range_type;
+       
+        return fnk::map<decltype(result_value<V>)>
+            (result_value<V>,
+             fnk::filter<decltype(is_value<V>)>
+                (is_value<V>,
+                 fnk::map
+                    ([](std::pair<ResT, RngT> const& r) { return r.first; }, pres.second.data ())));
+    }
+    */
 } // namespace core
 } // namespace rpc
 
 namespace fnk
 {
-/* to be rewritten later involving the continuations
-    template <typename It, typename V>
-    struct functor<rpc::core::parser<It, V>> : public default_functor<rpc::core::parser, It, V>
+/*    template <typename It, typename V, typename R>
+    struct functor<rpc::core::parser<It, V, R>> : public default_functor<rpc::core::parser, It, V, R>
     { 
         template <class F, typename U = typename type_support::function_traits<F>::return_type,
             typename = std::enable_if_t
                 <std::is_convertible
                     <V, typename type_support::function_traits<F>::template argument<0>::type>::value>>
-        static inline rpc::core::parser<It, U> fmap (F && f, rpc::core::parser<It, V> const& p)
+        static inline rpc::core::parser<It, U, R> fmap (F && f, rpc::core::parser<It, V, R> const& p)
         {
-            return rpc::core::parser<It, U>
+            return rpc::core::parser<It, U, R>
             {
-                .parse = [=](typename rpc::core::parser<It, U>::range_type const& r)
+                .description = "[" + p.description + " //fmap// " + fnk::utility::format_function_type<F>() + "]",
+                .parse = [=](typename rpc::core::parser<It, U, R>::accumulator_type & acc)
                 {
-                    std::list<typename rpc::core::parser<It, U>::result_type> out;
-                    for (auto const& e : eval (p.parse, r))
-                    {
-                        if (rpc::core::parser<It, V>::is_value_result (e))
-                            type_support::container_traits<decltype(out)>::insert
-                                (out, std::make_pair
-                                        (eval (f, rpc::core::parser<It, V>::result_value (e)),
-                                         rpc::core::parser<It, V>::result_range(e)));
-                        else if (rpc::core::parser<It, V>::is_empty_result (e))
-                            type_support::container_traits<decltype(out)>::insert
-                                (out, std::make_pair
-                                        (rpc::core::empty_result<U>{},
-                                         rpc::core::parser<It, V>::result_range(e)));
-                        else
-                            type_support::container_traits<decltype(out)>::insert (out, rpc::core::failure{});
+                    typename rpc::core::parser<It, V, R>::accumulator_type tmp
+                        { rpc::core::empty<V>{}, acc.range() };
+                    
+                    auto res (p.parse (tmp));
+                    if (static_cast<bool>(res)) {
+                        acc.insert (fnk::eval (f, result_value (tmp.result ())), tmp.range());
+                        return rpc::core::status::SUCCESS;
+                    } else {
+                        acc.insert (rpc::core::failure{rpc::core::result_failure (tmp.result ())}, tmp.range());
+                        return rpc::core::status::FAILURE;
                     }
-                    return out;
-                },
-                .description
-                    = std::string("[")
-                    + p.description
-                    + std::string(" `fmap` ")
-                    + fnk::utility::format_function_type<F>()
-                    + std::string("]")
-            }; 
+                }
+            };
         }
     };
 
-    template <typename It, typename V>
-    struct functor<rpc::core::parser<It, V> const> : public functor<rpc::core::parser<It, V>> {};
-    template <typename It, typename V>
-    struct functor<rpc::core::parser<It, V> &> : public functor<rpc::core::parser<It, V>> {};
-    template <typename It, typename V>
-    struct functor<rpc::core::parser<It, V> const&> : public functor<rpc::core::parser<It, V>> {};
-    template <typename It, typename V>
-    struct functor<rpc::core::parser<It, V> &&> : public functor<rpc::core::parser<It, V>> {};
+    template <typename It, typename V, typename R>
+    struct functor<rpc::core::parser<It, V, R> const> : public functor<rpc::core::parser<It, V, R>> {};
+    template <typename It, typename V, typename R>
+    struct functor<rpc::core::parser<It, V, R> &> : public functor<rpc::core::parser<It, V, R>> {};
+    template <typename It, typename V, typename R>
+    struct functor<rpc::core::parser<It, V, R> const&> : public functor<rpc::core::parser<It, V, R>> {};
+    template <typename It, typename V, typename R>
+    struct functor<rpc::core::parser<It, V, R> &&> : public functor<rpc::core::parser<It, V, R>> {};
     
     template <typename It, typename V>
     struct applicative_functor<rpc::core::parser<It, V>> : public default_applicative_functor<rpc::core::parser<It, V>>
@@ -276,7 +326,7 @@ namespace fnk
             typename = std::enable_if_t<std::is_same<std::decay_t<P>, rpc::core::parser<It, V>>::value>>
         static inline decltype(auto) mbind (P && p, F && f)
         {
-            using R = typename type_support::function_traits<F>::result_type;
+            using R = typename type_support::function_traits<F>::return_type;
             return rpc::core::parser<It, typename R::value_type>
             {
                 .parse = [=](typename rpc::core::parser_traits<R>::range_type const& r)

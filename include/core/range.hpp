@@ -44,11 +44,15 @@ namespace core
         template <typename C,
             typename = std::enable_if_t<fnk::type_support::container_traits<C>::is_container::value>,
             typename = std::enable_if_t<std::is_same<token_type, typename fnk::type_support::container_traits<C>::value_type>::value>>
-        constexpr range (C const& c) noexcept : valid_(not c.empty()), begin_(c.cbegin()), end_(c.cend()) {}
+        range (C const& c) noexcept
+            : valid_(not c.empty()), begin_(c.cbegin()), end_(c.cend()), length_(std::distance(begin_, end_))
+        {}
 
         template <typename I,
             typename = std::enable_if_t<std::is_base_of<iter_type, I>::value>>
-        constexpr range (I const& b, I const& e) noexcept : valid_(0 < std::distance(b, e)), begin_(b), end_(e) {}
+        range (I const& b, I const& e) noexcept
+            : valid_(0 < std::distance(b, e)), begin_(b), end_(e), length_(std::distance(begin_, end_))
+        {}
 
         inline constexpr decltype(auto) begin (void) const noexcept { return begin_; }
 
@@ -59,14 +63,21 @@ namespace core
         inline constexpr decltype(auto) cend (void) const noexcept { return end_; }
         
         inline constexpr decltype(auto) head (void) const noexcept(noexcept(*std::declval<const iter_type>())) { return *begin_; }
-        
-        inline constexpr decltype(auto) tail (void) const noexcept { return range (std::next(begin_), end_); }
-    
-        inline constexpr decltype(auto) tail (diff_type const n) const noexcept { return range (std::next(begin_, n), end_); }
+ 
+        inline decltype(auto) tail (diff_type const n = 1) const noexcept
+        {
+            return length_ >= n ? range (std::next(begin_, n), end_)
+                                : range (end_, end_);
+        }
 
-        inline constexpr decltype(auto) length (void) const noexcept { return std::distance (begin_, end_); }
-        
-        inline constexpr decltype(auto) empty (void) const noexcept { return not (valid_ && begin_ != end_); }
+        inline decltype(auto) length (void) const noexcept { return std::distance (begin_, end_); }
+
+        inline decltype(auto) distance (range<It> const& other)
+        {
+            return std::distance (begin(), other.begin());
+        }
+
+        inline constexpr decltype(auto) empty (void) const noexcept { return not (valid_ && length_ > 0); }
 
         inline constexpr decltype(auto) valid (void) const noexcept { return valid_; }
    
@@ -74,6 +85,7 @@ namespace core
         bool valid_;
         iter_type const begin_;
         iter_type const end_;
+        diff_type const length_;
     };
 
     template <typename R>
