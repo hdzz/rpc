@@ -201,6 +201,21 @@ namespace utility
         tuple_helper<sizeof...(As)>::increment (std::forward(a));
     }
 
+namespace detail
+{
+    template <class A, class ... As, std::size_t ... I>
+    static constexpr inline decltype(auto) tuple_tail_helper (std::tuple<A, As...> && a)
+    {
+        return std::make_tuple (std::get<I>(a)...);
+    }
+} // namespace detail
+
+    template <class A, class ... As>
+    static constexpr inline decltype(auto) tuple_tail (std::tuple<A, As...> && a)
+    {
+        return detail::tuple_tail_helper<A, As..., trunc_seq_gen<1, sizeof...(As)>> (a);
+    }
+
     template <class Tup>
     static inline constexpr decltype(auto) tuple_dereference (Tup && t)
     {

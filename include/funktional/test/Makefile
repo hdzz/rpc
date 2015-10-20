@@ -29,7 +29,5 @@ $(build_dir)/%.out : $(source_dir)/%.cpp
 
 clean:
 	@rm -rf *.log *.dSYM *.DS_Store
-
-clean-all: clean
 	@rm -rf $(build_dir)
 

@@ -76,6 +76,15 @@ namespace utility
         using type = seq<S...>;
     };
 
+    template <std::size_t T, std::size_t N, std::size_t ... S>
+    struct trunc_seq_gen : seq_gen <T, N-1, N-1, S...> {};
+
+    template <std::size_t T, std::size_t ... S>
+    struct trunc_seq_gen <T, S...>
+    {
+        using type = seq<S...>; 
+    };
+
     //
     // Type equality
     //

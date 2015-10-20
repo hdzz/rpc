@@ -77,7 +77,7 @@ namespace fnk
 
             auto b_ = std::forward<W>(b);
             for (auto const& e : std::forward<U>(c))
-                b_ = fnk::eval (f, b_, e);
+                b_ = f (b_, e);
             return b_;
         }
 
@@ -141,7 +141,7 @@ namespace fnk
             auto end (c.crend());
             auto b_ (std::forward<std::remove_cv_t<B>>(b));
             for (; it != end; ++it)
-                b_ = f (b_, *it);
+                b_ = f (*it, b_);
             return b_;
         }
 
