@@ -84,7 +84,7 @@ namespace fnk
             auto ret (f(a));
             for (std::size_t i = 1; i <= n; ++i)
                 ret = f (ret);
-            return std::ref (ret);
+            return ret;
         };
     }
 
@@ -117,7 +117,7 @@ namespace fnk
                 while (predicate (res))
                     res = f (res);
             }
-            return std::ref (res);
+            return res;
         };
     }
 
