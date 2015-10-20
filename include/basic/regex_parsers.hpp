@@ -23,45 +23,89 @@ namespace rpc
 {
 namespace basic
 {
-    template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    inline decltype(auto) regexparser (std::basic_regex<CharT> const& rx, std::string const& pattern = "")
+    template <typename It,
+             typename T = typename std::iterator_traits<It>::value_type,
+             typename R = core::range<It>>
+    inline decltype(auto) regexparser
+        (std::basic_regex<T> const& rx, std::string const& pattern = "")
     {
-        using OT = std::list<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::result_type>;
-        return rpc::core::parser<It, std::basic_string<CharT>, CharT>
+        return rpc::core::parser<It, std::basic_string<T>, R>
         {
-            .parse = [=](typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::range_type const& r)
+            .description =
+                "[" + 
+                (pattern.empty() ? "regex match" : (pattern + " match")) +
+                "]",
+            .parse =
+            [=](typename rpc::core::parser
+                    <It, std::basic_string<T>, R>::accumulator_type & acc)
             {
-                std::match_results<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::range_type::iter_type> matches;
-                if (std::regex_search (r.begin(), r.end(), matches, rx, std::regex_constants::match_continuous)) {
-                    return OT
-                        {
-                            std::make_pair (matches.str (0), r.tail (matches.length(0)))
-                        };
-                } else
-                    return OT { core::failure {"expected [" + (pattern.empty() ? "regex match" : (pattern + " match")) + "]"} };
-            },
-            .description = std::string("[") + (pattern.empty() ? "regex match" : (pattern + " match")) + std::string("]")
+                std::match_results
+                    <typename rpc::core::parser
+                        <It, std::basic_string<T>, R>::range_type::iter_type>
+                matches;
+                
+                auto start (torange (acc));
+                auto res = std::regex_search
+                    (start.cbegin(), start.cend(), matches, rx,
+                    std::regex_constants::match_continuous);
+                if (res) {
+                    acc.insert
+                        (matches.str (0), start.tail (matches.length (0)));
+                    return acc;
+                } else {
+                    acc.insert
+                        (core::failure
+                            {"expected [" +
+                            (pattern.empty() ? "regex match"
+                                             : (pattern + " match")) +
+                            "]"},
+                        start);
+                    return acc;
+                }
+            }
         };
     }
-    
-    template <typename It, typename CharT = typename std::iterator_traits<It>::value_type>
-    inline decltype(auto) wregexparser (std::basic_regex<CharT> const& rx, std::string const& pattern = "")
+   
+    template <typename It,
+             typename T = typename std::iterator_traits<It>::value_type,
+             typename R = core::range<It>>
+    inline decltype(auto) wregexparser
+        (std::basic_regex<T> const& rx, std::string const& pattern = "")
     {
-        using OT = std::list<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::result_type>;
-        return rpc::core::parser<It, std::basic_string<CharT>, CharT>
+        return rpc::core::parser<It, std::basic_string<T>, R>
         {
-            .parse = [=](typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::range_type const& r)
+            .description =
+                "[" +
+                (pattern.empty() ? "wregex match" : (pattern + " match")) +
+                "]",
+            .parse =
+            [=](typename rpc::core::parser
+                    <It, std::basic_string<T>, R>::accumulator & acc)
             {
-                std::match_results<typename rpc::core::parser<It, std::basic_string<CharT>, CharT>::range_type::iter_type> matches;
-                if (std::regex_search (r.begin(), r.end(), matches, rx, std::regex_constants::match_continuous)) {
-                    return OT
-                        {
-                            std::make_pair (matches.str (0), r.tail (matches.length(0)))
-                        };
-                } else
-                    return OT { core::failure {"expected [" + (pattern.empty() ? "wregex match" : (pattern + " match")) + "]"} };
-            },
-            .description = std::string("[") + (pattern.empty() ? "wregex match" : (pattern + " match")) + std::string("]")
+                std::match_results
+                    <typename rpc::core::parser
+                        <It, std::basic_string<T>, R>::range_type::iter_type>
+                matches;
+                
+                auto start (torange (acc));
+                auto res = std::regex_search
+                    (start.cbegin(), start.cend(), matches, rx,
+                    std::regex_constants::match_continuous);
+                if (res) {
+                    acc.insert
+                        (matches.str (0), start.tail (matches.length (0)));
+                    return acc;
+                } else {
+                    acc.insert
+                        (core::failure
+                            {"expected [" +
+                            (pattern.empty() ? "wregex match"
+                                             : (pattern + " match")) +
+                            "]"},
+                        start);
+                    return acc;
+                }
+            }
         };
     }
 } // namespace basic
