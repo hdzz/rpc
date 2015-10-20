@@ -139,6 +139,12 @@ namespace core
     {
         return acc.range (n);
     }
+    
+    template <typename A>
+    inline decltype(auto) torange_head (A const& acc, std::size_t const n = 0)
+    {
+        return acc.range (n).head();
+    }
  
     template <typename A>
     inline decltype(auto) torange_tail (A const& acc, std::size_t const n = 0)
