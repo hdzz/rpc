@@ -24,7 +24,3 @@ examples:
 clean:
 	@make clean -C $(test_dir)
 
-clean-all:
-	@make clean-all -C $(test_dir)
-	@make clean-all -C $(examples_dir)
-
