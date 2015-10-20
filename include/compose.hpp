@@ -89,6 +89,39 @@ namespace fnk
     }
 
     //
+    // Iteratively apply f until the predicate fails, or
+    // if n is not equal to 0 then until the predicate fails or
+    // n iterations have occured
+    //
+    template <class F, class P>
+    inline constexpr decltype(auto) iterate_while
+        (F && f, P && predicate, std::size_t const n = 0)
+    {
+        using ftraits = typename type_support::function_traits<F>;
+        using fret = typename ftraits::return_type;
+        using farg = typename ftraits::template argument<0>::type;
+        static_assert (ftraits::arity == 1,
+                      "cannot compose function with arity not equal to 1 with "
+                      "itself");
+        static_assert (std::is_convertible<fret, farg>::value,
+                      "function return type must be convertible to it's "
+                      "argument type");
+   
+        return [=](auto&& a)
+        {
+            auto res (f(a));
+            if (n != 0) {
+                for (std::size_t i = 1; i <= n && predicate (res); ++i)
+                    res = f (res);
+            } else {
+                while (predicate (res))
+                    res = f (res);
+            }
+            return res;
+        };
+    }
+
+    //
     // Composing N_i-Ary functions:
     //      compose(f, g_1,..., g_N)(a_1,..., a_N) = f(g_1(a_1),..., g_N(a_N))
     //
