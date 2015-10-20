@@ -122,7 +122,7 @@ namespace detail
         }
     private:
         Alloc alloc_;
-        std::unique_ptr<T> const data_; // recursive_type<T> is owning, as it merely replaces the existence of T in a variant.
+        std::unique_ptr<T> data_; // recursive_type<T> is owning, as it merely replaces the existence of T in a variant.
     };
 
     template <typename T, typename ... Ts>
@@ -337,7 +337,7 @@ namespace detail
             typename = std::enable_if_t<is_adt_type<U>::value>>
         using index = fnk::utility::type_to_index<U, T, Ts...>;
     private:
-        std::size_t const type_index_;
+        std::size_t type_index_;
         detail::adt_internal_storage<T, Ts...> storage;
     };
 
@@ -358,13 +358,6 @@ namespace detail
     
     template <typename T, typename ... Ts>
     struct is_algebraic<adt<T, Ts...> &&> : public std::true_type {};
-
-    struct foo;
-
-    struct foo
-    {
-        adt<recursive<foo>, int> data;
-    };
 } // namespace fnk
 
 #endif // ifndef ALGEBRAIC_HPP
