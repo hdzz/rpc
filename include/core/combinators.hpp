@@ -9,114 +9,159 @@
 #ifndef COMBINATORS_HPP
 #define COMBINATORS_HPP
 
+#include <iostream>
 #include <type_traits>
 
 #include "range.hpp"
 #include "parser.hpp"
 #include "../basic/atom_parsers.hpp"
 
+#include "funktional/include/compose.hpp"
 #include "funktional/include/type_support/function_traits.hpp"
 
 namespace rpc
 {
 namespace core
 {
-    template <typename It, typename V, typename F,
-        typename = std::enable_if_t<is_parser_instance<typename fnk::type_support::function_traits<F>::result_type>::value>>
-    inline decltype(auto) bind (parser<It, V> const& p, F && f)
+    template <typename F, typename It, typename V, typename R>
+    decltype(auto) lift (parser<It, V, R> const&, F &&);
+
+
+    template <typename It, typename V, typename R, typename F>
+    inline decltype(auto) bind (parser<It, V, R> const& p, F && f)
     {
-        using R = typename fnk::type_support::function_traits<F>::result_type;
-        return parser<It, typename R::value_type>
+        using Ftraits = fnk::type_support::function_traits<F>;
+        using Fret = typename Ftraits::return_type;
+        
+        static_assert (is_parser_instance<Fret>::value,
+                      "function being bound must return a parser.");
+
+        using Qtraits = parser_traits<Fret>;
+        using Qv = typename Qtraits::value_type;
+       
+        static_assert (std::is_same<V, Qv>::value,
+                      "value types of bound parsers must agree.");
+
+        return parser<It, Qv, R>
         {
-            .parse = [=](typename parser_traits<R>::range_type const& r)
+            .description = 
+                "[" + 
+                p.description + 
+                " //bind// " + 
+                fnk::utility::format_function_type<F>() + 
+                "]",
+            .parse = [=](typename Qtraits::accumulator_type & acc)
             {
-                return fnk::concat
-                    (fnk::map
-                        ([=](typename parser<It, V>::result_type const& e)
-                         {
-                            if (parser<It, V>::is_value_result (e))
-                                return fnk::eval
-                                    (fnk::eval(f, parser<It, V>::result_value (e)).parse, parser<It, V>::result_range (e));
-                            else
-                                return std::list<typename parser_traits<R>::result_type>{ failure{} };
-                         },
-                        fnk::eval (p.parse, r)));
-            },
-            .description
-                = std::string("[")
-                + p.description
-                + std::string(" //bind// ")
-                + fnk::utility::format_function_type<F>()
-                + std::string("]")
+                auto res (p.parse (acc));
+                if (parse_success (res)) {
+                    auto q (fnk::eval (f, toresult_value (acc)));
+                    return q.parse (res);
+                } else {
+                    return res;
+                }
+            }
         }; 
     }
 
-    template <typename P, typename Q,
-        typename = std::enable_if_t<is_parser_instance<P>::value>,
-        typename = std::enable_if_t<is_parser_instance<Q>::value>,
-        typename =
-            std::enable_if_t<std::is_same<typename parser_traits<P>::value_type, typename parser_traits<Q>::value_type>::value>,
-        typename =
-            std::enable_if_t<std::is_same<typename parser_traits<P>::token_type, typename parser_traits<Q>::token_type>::value>>
-    inline decltype(auto) combine (P && p, Q && q)
+    //
+    // bind even on failure.
+    //
+    template <typename It, typename V, typename R, typename F>
+    inline decltype(auto) bindf (parser<It, V, R> const& p, F && f)
     {
-        using It = typename parser_traits<P>::range_type::iter_type;
-        using V  = typename parser_traits<P>::value_type;
-        
-        return parser<It, V>
+        using Fret =
+            typename fnk::type_support::function_traits<F>::return_type;
+
+        static_assert (is_parser_instance<Fret>::value,
+                      "function being bound must return a parser.");
+
+        using Qtraits = parser_traits<Fret>;
+        using Qv = typename Qtraits::value_type;
+       
+        static_assert (std::is_same<V, Qv>::value,
+                      "value types of bound parsers must agree.");
+
+        return parser<It, Qv, R>
         {
-            .parse = [=](typename parser<It, V>::range_type const& r)
+            .description = 
+                "[" + 
+                p.description + 
+                " //bindf// " + 
+                fnk::utility::format_function_type<F>() + 
+                "]",
+            .parse = [=](typename Qtraits::accumulator_type & acc)
             {
-                return fnk::append (fnk::eval (p.parse, r), fnk::eval (q.parse, r));
-            },
-            .description
-                = std::string("[")
-                + p.description
-                + std::string(" //++//  ")
-                + q.description
-                + std::string("]")
+                auto res (p.parse (acc));
+                auto q (fnk::eval (f, toresult_value (res)));
+                return q.parse (res);
+            }
+        }; 
+    }
+ 
+    template <typename It, typename V, typename R>
+    inline decltype(auto) ignore (parser<It, V, R> const& p)
+    {
+        return override_description
+            (lift
+                (p, [](V const& /*v*/) { return empty<V>{}; }), p.description);
+    }
+
+    template <typename U, typename It, typename V, typename R>
+    inline decltype(auto) liftignore (parser<It, V, R> const& p)
+    {
+        return parser<It, U, R>
+        {
+            .description = p.description,
+            .parse = [=](typename parser<It, U, R>::accumulator_type & acc)
+            {
+                typename parser<It, V, R>::accumulator_type mock
+                    { empty<V>{}, torange (acc) };
+                 
+                auto res (p.parse (mock));
+                if (parse_success (res)) {
+                    acc.insert (parse_result<U> {empty<U> {}}, torange (mock));
+                    return acc;
+                } else {
+                    acc.insert
+                        (failure {toresult_failure (mock)}, torange (mock));
+                    return acc;
+                }
+            }
         };
     }
 
-    template <typename P, typename Q,
-        typename = std::enable_if_t<is_parser_instance<P>::value>,
-        typename = std::enable_if_t<is_parser_instance<Q>::value>,
-        typename = std::enable_if_t
-            <std::is_same<typename parser_traits<P>::value_type, typename parser_traits<Q>::value_type>::value>,
-        typename = std::enable_if_t
-            <std::is_same<typename parser_traits<P>::range_type, typename parser_traits<Q>::range_type>::value>>
-    inline decltype(auto) sequence (P && p, Q && q)
+    template <typename It, typename V, typename R>
+    inline decltype(auto) branch (parser<It, V, R> const& p,
+                                  parser<It, V, R> const& succ,
+                                  parser<It, V, R> const& next)
     {
-        using It = typename parser_traits<P>::range_type::iter_type;
-        using V = typename parser_traits<P>::value_type;
-        using R = typename parser_traits<P>::result_type;
-        return parser<It, V>
-        {
-            .parse = [=](typename parser<It, V>::range_type const& r)
-            {
-                auto l = fnk::eval (p.parse, r);
-                std::list<std::list<R>> out {l};
-                for (auto const& e : l)
+        return override_description
+            (bindf
+                (p,
+                [=](typename parser<It, V, R>::result_type const& res)
                 {
-                    if (parser<It, V>::is_result (e))
-                        fnk::type_support::container_traits<std::list<std::list<R>>>::insert
-                            (out, fnk::eval (q.parse, parser<It, V>::result_range (e)));
-                    else
-                        fnk::type_support::container_traits<std::list<std::list<R>>>::insert
-                            (out, std::list<R>{failure{parser<It, V>::failure_message(e)}});
-                }
-                return fnk::concat (out);
-            },
-            .description
-                = std::string("[")
-                + p.description
-                + std::string(" //then// ")
-                + q.description
-                + std::string("]")
-        };
+                    return is_success (res) ? succ : next;
+                }),
+            "[(branch) :: " +
+            p.description + 
+            " => " + 
+            succ.description +
+            " | " + 
+            next.description);
     }
-    
-    template <typename P, typename ... Qs, typename = std::enable_if_t<sizeof...(Qs) >= 2>>
+ 
+    template <typename It, typename V, typename R = range<It>>
+    inline decltype(auto) sequence
+        (parser<It, V, R> const& p, parser<It, V, R> const& q)
+    {
+        return override_description
+            (branch (p, q, basic::failwith<It, V, R> (p.description)),
+             "[" + p.description + " //then// " + q.description + "]");
+    }
+
+    template <typename P,
+             typename ... Qs,
+             typename = std::enable_if_t<sizeof...(Qs) >= 2>>
     inline decltype(auto) sequence (P && p, Qs && ... qs)
     {
         return sequence (p, sequence (qs...));    
@@ -127,34 +172,11 @@ namespace core
     // Note that the value types do not have to be the same; in fact, the parser
     // returned has the value type of the right argument.
     //
-    template <typename P, typename Q,
-        typename = std::enable_if_t<is_parser_instance<P>::value>,
-        typename = std::enable_if_t<is_parser_instance<Q>::value>,
-        typename = std::enable_if_t
-            <std::is_same<typename parser_traits<P>::range_type, typename parser_traits<Q>::range_type>::value>>
+    template <typename P, typename Q>
     inline decltype(auto) ignorel (P && p, Q && q)
     {
-        using PIt = typename parser_traits<P>::range_type::iter_type;
-        using PV = typename parser_traits<P>::value_type;
-        using QV = typename parser_traits<Q>::value_type;
-        using QR = typename parser_traits<Q>::result_type;
-        return parser<PIt, QV>
-        {
-            .parse = [=](typename parser<PIt, QV>::range_type const& r)
-            {
-                auto l1 = fnk::eval (p.parse, r);
-                if (parser<PIt, PV>::is_failure (l1.front()))
-                    return std::list<QR> { failure{} };
-                else 
-                    return fnk::eval (q.parse, parser<PIt, PV>::result_range (l1.back()));
-            },
-            .description
-                = std::string("[")
-                + p.description
-                + std::string(" //then// ")
-                + q.description
-                + std::string("]")
-        };
+        using U = typename parser_traits<Q>::value_type;
+        return sequence (liftignore<U> (p), q);
     }
 
     //
@@ -162,77 +184,30 @@ namespace core
     // Note that the value types do not have to be the same; in fact, the parser
     // returned has the value type of the left argument.
     //
-    template <typename P, typename Q,
-        typename = std::enable_if_t<is_parser_instance<P>::value>,
-        typename = std::enable_if_t<is_parser_instance<Q>::value>,
-        typename = std::enable_if_t
-            <std::is_same<typename parser_traits<P>::range_type, typename parser_traits<Q>::range_type>::value>>
+    template <typename P, typename Q>
     inline decltype(auto) ignorer (P && p, Q && q)
     {
-        using PIt = typename parser_traits<P>::range_type::iter_type;
-        using PV = typename parser_traits<P>::value_type;
-        using PR = typename parser_traits<P>::result_type;
-        using QIt = typename parser_traits<Q>::range_type::iter_type;
-        using QV = typename parser_traits<Q>::value_type;
-        return parser<PIt, PV>
-        {
-            .parse = [=](typename parser<PIt, PV>::range_type const& r)
-            {
-                auto l1 = fnk::eval (p.parse, r);
-                if (parser<PIt, PV>::is_failure (l1.front()))
-                    return std::list<PR> { failure{} };
-                else {
-                    auto l2 = fnk::eval (q.parse, parser<PIt, PV>::result_range (l1.back()));
-                    if (parser<QIt, QV>::is_failure (l2.front()))
-                        return std::list<PR> { failure{} };
-                    else {
-                        auto l1_back = l1.back();
-                        l1.pop_back();
-                        l1.push_back
-                            (std::make_pair
-                                (parser<PIt, PV>::result_value (l1_back), parser<QIt, QV>::result_range (l2.back())));
-                        return l1;
-                    }
-                }
-            },
-            .description
-                = std::string("[")
-                + p.description
-                + std::string(" //then// ")
-                + q.description
-                + std::string("]")
-        };
+        using U = typename parser_traits<P>::value_type;
+        return sequence (p, liftignore<U> (q));
     }
-    
-    template <typename P, typename Q,
-        typename = std::enable_if_t<is_parser_instance<P>::value>,
-        typename = std::enable_if_t<is_parser_instance<Q>::value>,
-        typename =
-            std::enable_if_t<std::is_same<typename parser_traits<P>::value_type, typename parser_traits<Q>::value_type>::value>,
-        typename =
-            std::enable_if_t<std::is_same<typename parser_traits<P>::range_type, typename parser_traits<Q>::range_type>::value>>
+ 
+    template <typename P, typename Q>
     inline decltype(auto) option (P && p, Q && q)
     {
-        using It = typename parser_traits<P>::range_type::iter_type;
+        using It = typename parser_traits<P>::iter_type;
         using V  = typename parser_traits<P>::value_type;
-        return parser<It, V>
-        {
-            .parse = [=](typename parser<It, V>::range_type const& r)
-            {
-                auto l = fnk::eval (p.parse, r);
-                return parser<It, V>::is_failure (l.front()) ? fnk::eval (q.parse, r) : l;
-            },
-            .description
-                = std::string("[")
-                + p.description
-                + std::string(" //or// ")
-                + q.description
-                + std::string("]")
-        };
+        using R  = typename parser_traits<P>::range_type;
+ 
+        return override_description
+            (branch
+                (p, basic::pass<It, V, R>, q),
+            "[" + p.description + " //or// " + q.description + "]");
     }
-    
-    template <typename P, typename ... Qs, typename = std::enable_if_t<sizeof...(Qs) >= 2>,
-        typename = std::enable_if_t<is_parser_instance<P>::value>>
+ 
+    template <typename P,
+             typename ... Qs,
+             typename = std::enable_if_t<sizeof...(Qs) >= 2>,
+             typename = std::enable_if_t<is_parser_instance<P>::value>>
     inline decltype(auto) option (P && p, Qs && ... qs)
     {
         return option (p, option (qs...));
@@ -240,291 +215,327 @@ namespace core
 
     //
     // Either 0 or 1 successful parses. If the primary parse fails,
-    // then the default value is returned; hence, this parser ALWAYS
-    // succeeds, but may or may not consume input.
+    // then pass silently.
     //
-    template <typename It, typename V>
-    inline decltype(auto) optional (parser<It, V> const& p, V && default_value)
+    template <typename It, typename V, typename R>
+    inline decltype(auto) optional (parser<It, V, R> const& p)
     {
-        return option (p, basic::unit<It> (default_value));
-    }
- 
-    //
-    // One or more successful parses
-    //
-    template <typename It, typename V>
-    inline decltype(auto) some (parser<It, V> const& p)
-    {
-        return parser<It, V>
-        {
-            .parse = [=](typename parser<It, V>::range_type const& r)
-            {
-                auto l1 = eval (p.parse, r);
-                if (parser<It, V>::is_failure (l1.front()))
-                    return std::list<typename parser<It, V>::result_type>
-                        { failure{"expected "
-                                  + std::string("[(some) ")
-                                  + p.description
-                                  + std::string("]")} };
-                else {
-                    while (true)
-                    {
-                        auto l2 = eval (p.parse, parser<It, V>::result_range(l1.back()));
-                        if (parser<It, V>::is_failure (l2.front()))
-                            return l1;
-                        else
-                            l1.splice (l1.cend(), l2);
-                    }
-                } 
-            },
-            .description
-                = std::string("[(some) ")
-                + p.description
-                + std::string("]")
-        }; 
+        return override_description
+            (option (p, basic::pass<It, V, R>), "(optional) " + p.description);
     }
 
     //
-    // Exactly n successful parses
+    // Either 0 or 1 successful parses. If the primary parse fails,
+    // then the default value is returned; hence, this parser ALWAYS
+    // succeeds, but may or may not consume input.
     //
-    template <typename It, typename V>
-    inline decltype(auto) some (parser<It, V> const& p, std::size_t const n)
+    template <typename It, typename V, typename R>
+    inline decltype(auto) optional
+        (parser<It, V, R> const& p, V const& default_value)
     {
-        return parser<It, V>
-        {
-            .parse = [=](typename parser<It, V>::range_type const& r)
-            {
-                auto l1 = eval (p.parse, r);
-                if (parser<It, V>::is_failure (l1.front()))
-                    return std::list<typename parser<It, V>::result_type>
-                        { failure{"expected "
-                                  + std::string("[(some ")
-                                  + std::to_string (n)
-                                  + std::string (") ")
-                                  + p.description
-                                  + std::string("]")} };
-                else {
-                    for (std::size_t i = 1; i < n; ++i) // run n-1 more times
-                    {
-                        auto l2 = eval (p.parse, parser<It, V>::result_range(l1.back()));
-                        if (parser<It, V>::is_failure (l2.front()))
-                            return l1;
-                        else
-                            l1.splice (l1.cend(), l2);
-                    }
-                    return l1;
-                } 
-            },
-            .description
-                = std::string("[(some " + std::to_string(n) + ") ")
-                + p.description
-                + std::string("]")
-        }; 
+        auto dflt (basic::unit<It, V, R> (default_value));
+        return override_description
+            (option (p, dflt),
+            "(optional) " + p.description + " | " + dflt.description);
+    }
+
+    //
+    // At least one but at most n successful parses; if n == 0,
+    // then there is no upper bound.
+    //
+    template <typename It, typename V, typename R>
+    inline decltype(auto) some
+        (parser<It, V, R> const& p, std::size_t const n = 0)
+    {
+        return override_description
+            (branch
+                (p,
+                fnk::iterate_while (p, parse_success, n == 0 ? 0 : n - 1),
+                basic::failwith<It, V, R> (p.description)),
+            "[(some) " + p.description + "]");
     }
 
     //
     // Zero or more successful parses
     //
-    template <typename It, typename V>
-    inline decltype(auto) many (parser<It, V> const& p)
+    template <typename It, typename V, typename R>
+    inline decltype(auto) many (parser<It, V, R> const& p)
     {
-        return parser<It, V>
-        {
-            .parse = [=](typename parser<It, V>::range_type const& r)
-            {
-                auto l1 = eval (p.parse, r);
-                if (parser<It, V>::is_failure (l1.front()))
-                    return std::list<typename parser<It, V>::result_type>{ std::make_pair (empty_result<V>{}, r) };
-                else {
-                    while (true)
-                    {
-                        auto l2 = eval (p.parse, parser<It, V>::result_range(l1.back()));
-                        if (parser<It, V>::is_failure (l2.front()))
-                            return l1;
-                        else
-                            l1.splice (l1.cend(), l2);
-                    }
-                }
-            },
-            .description
-                = std::string("[(many) ")
-                + p.description
-                + std::string("]")
-        }; 
+        return override_description
+            (branch
+                (p,
+                fnk::iterate_while (p, parse_success), basic::pass<It, V, R>),
+            "[(many) " + p.description + "]");
     }
 
     //
-    // Zero or more successful parses, but at most n successes
+    // Reduction parser: reduces over a list of parse values (using a foldl)
+    // to produce a final parse result.
     //
-    template <typename It, typename V>
-    inline decltype(auto) many (parser<It, V> const& p, std::size_t const n)
-    {
-        return parser<It, V>
-        {
-            .parse = [=](typename parser<It, V>::range_type const& r)
-            {
-                auto l1 = eval (p.parse, r);
-                if (parser<It, V>::is_failure (l1.front()))
-                    return std::list<typename parser<It, V>::result_type>{ std::make_pair (empty_result<V>{}, r) };
-                else {
-                    for (std::size_t i = 1; i < n; ++i) // run n-1 more times
-                    {
-                        auto l2 = eval (p.parse, parser<It, V>::result_range(l1.back()));
-                        if (parser<It, V>::is_failure (l2.front()))
-                            return l1;
-                        else
-                            l1.splice (l1.cend(), l2);
-                    }
-                    if (parser<It,V>::is_result (eval (p.parse, parser<It, V>::result_range(l1.back())))) // check that n+1 runs fails
-                        return std::list<typename parser<It, V>::result_type>
-                            { failure {"expected [(many " + std::to_string(n) + ") " + p.description + "]"} };
-                    else
-                        return l1;
-                }
-            },
-            .description
-                = std::string("[(many " + std::to_string(n) + ") ")
-                + p.description
-                + std::string("]")
-        }; 
-    }
-
-    //
-    // Reduction parser: reduces over a list of parse values (using a foldl) to produce
-    // a final parse result.
-    //
-    template <typename It, typename V,
+    template <typename It, typename V, typename R,
         typename = std::enable_if_t<fnk::monoid<V>::is_monoid_instance::value>>
-    inline decltype(auto) reduce (parser<It, V> const& p)
+    inline decltype(auto) reduce (parser<It, V, R> const& p)
     {
-        return parser<It, V>
+        static_assert (fnk::monoid<V>::is_monoid_instance::value,
+                      "reduction requires that value type is monoid instance");
+        return parser<It, V, R>
         {
-            .parse = [=](typename parser<It, V>::range_type const& r)
+            .description = "[(reduced) " + p.description + "]",
+            .parse = [=](typename parser<It, V, R>::accumulator_type & acc)
             {
-                auto l = fnk::eval (p.parse, r);
-                if (parser<It, V>::is_parse_success (l))
-                    return std::list<typename parser<It, V>::result_type>
-                        { std::make_pair
-                            (fnk::fold (parser<It, V>::values (l)),
-                             parser<It, V>::result_range (l.back())) };
-                else
-                    return std::list<typename parser<It, V>::result_type> { failure {parser<It, V>::failure_message (l.front())} };
-            },
-            .description
-                = std::string("[(reduced) ")
-                + p.description
-                + std::string("]")
+                auto start (torange (acc));
+                auto res (p.parse (acc));
+                if (parse_success (res)) {
+                    auto diff (start.distance (torange (res)));
+                    auto past (res.past (diff));
+                    auto preresult
+                        (fnk::map
+                            (result_value<V>,
+                            fnk::filter
+                                (fnk::map
+                                    (toresult, past),
+                                is_value<V>)));
+                    res.insert (fnk::fold (preresult), torange (res));
+                    return res;
+                } else {
+                    return res;
+                }
+            }
         };
-    }  
+    }
+ 
+    //
+    // Reduction parser: reduces over a list of parse values (using a foldr)
+    // to produce a final parse result.
+    //
+    template <typename F, typename B, typename It, typename V, typename R,
+        typename = std::enable_if_t<fnk::monoid<V>::is_monoid_instance::value>>
+    inline decltype(auto) reducer (parser<It, V, R> const& p, F && f, B && b)
+    {
+        using W = typename fnk::type_support::function_traits<F>::return_type;
+        return parser<It, W, R>
+        {
+            .description =
+                "[(reducer'd by" +
+                fnk::utility::format_function_type<F>() + 
+                ") " + 
+                p.description + 
+                "]",
+            .parse = [=](typename parser<It, W, R>::accumulator_type & acc)
+            {
+                auto start (torange (acc));
+                typename parser<It, V, R>::accumulator_type mock
+                    { empty<V>{}, start };
+ 
+                auto res (p.parse (mock));
+                if (parse_success (res)) {
+                    auto diff (start.distance (torange (res)));
+                    auto past (res.past (diff));
+                    auto preresult
+                        (fnk::map
+                            (result_value<V>,
+                            fnk::filter
+                                (fnk::map
+                                    (toresult, past),
+                                is_value<V>)));
+                    acc.insert (fnk::foldr (f, b, preresult), torange (res));
+                    return acc;
+                } else {
+                    acc.insert
+                        (failure {toresult_failure (mock)}, torange (mock));
+                    return acc;
+                }
+            }
+        };
+    }
     
     //
-    // Reduction parser: reduces over a list of parse values (using a foldr) to produce
-    // a final parse result.
+    // Reduction parser: reduces over a list of parse values (using a foldl)
+    // to produce a final parse result.
     //
-    template <typename F, typename B, typename It, typename V,
+    template <typename F, typename B, typename It, typename V, typename R,
         typename = std::enable_if_t<fnk::monoid<V>::is_monoid_instance::value>>
-    inline decltype(auto) reduce (parser<It, V> const& p, F && f, B && b)
+    inline decltype(auto) reducel (parser<It, V, R> const& p, F && f, B && b)
     {
-        using W = decltype(fnk::fold<std::list<typename parser<It, V>::value_type>>(std::list<typename parser<It, V>::value_type>()));
-        return parser<It, W>
+        using W = typename fnk::type_support::function_traits<F>::return_type;
+        return parser<It, W, R>
         {
-            .parse = [=](typename parser<It, V>::range_type const& r)
+            .description =
+                "[(reducel'd by" +
+                fnk::utility::format_function_type<F>() + 
+                ") " + 
+                p.description + 
+                "]",
+            .parse = [=](typename parser<It, W, R>::accumulator_type & acc)
             {
-                auto l = fnk::eval (p.parse, r);
-                if (parser<It, V>::is_parse_success (l))
-                    return std::list<typename parser<It, W>::result_type>
-                        { std::make_pair
-                            (fnk::foldr (f, std::forward<B>(b), parser<It, V>::values (l)),
-                             parser<It, V>::result_range (l.back())) };
-                else
-                    return std::list<typename parser<It, W>::result_type> { failure {parser<It, V>::failure_message (l.front())} };
-            },
-            .description
-                = std::string("[(reduced " + fnk::utility::format_function_type<F>() + ") ")
-                + p.description
-                + std::string("]")
+                auto start (torange (acc));
+                typename parser<It, V, R>::accumulator_type mock
+                    { empty<V>{}, start };
+ 
+                auto res (p.parse (mock));
+                if (parse_success (res)) {
+                    auto diff (start.distance (torange (res)));
+                    auto past (res.past (diff));
+                    auto preresult
+                        (fnk::map
+                            (result_value<V>,
+                            fnk::filter
+                                (fnk::map
+                                    (toresult, past),
+                                is_value<V>)));
+                    acc.insert (fnk::foldl (f, b, preresult), torange (res));
+                    return acc;
+                } else {
+                    acc.insert
+                        (failure {toresult_failure (mock)}, torange (mock));
+                    return acc;
+                }
+            }
         };
     }
 
     //
-    // Lift a parser to a new value type using an existing type conversion.
+    // Lift a parser to a new value type using an existing type conversion
+    // (by static_cast).
     //
-    template <typename U, typename It, typename V>
-    inline decltype(auto) lift (parser<It, V> const& p)
+    template <typename U, typename It, typename V, typename R>
+    inline decltype(auto) lift (parser<It, V, R> const& p)
     {
-        return fnk::functor<parser<It, V>>::fmap
-            ([](V const& v) { return static_cast<U>(v); }, p);
-    }     
+        return lift (p, [](V const& v) { return static_cast<U>(v); });
+    } 
 
     //
-    // Lift a parser to a new value type using an explicitly provided function,
-    // which is the same as fmap.
+    // Lift a parser to a new value type using an explicitly provided function;
+    // this is the same as an fmap.
     //
-    template <typename F, typename It, typename V>
-    inline decltype(auto) lift (parser<It, V> const& p, F && f)
+    template <typename F, typename It, typename V, typename R>
+    inline decltype(auto) lift (parser<It, V, R> const& p, F && f)
     {
-        return fnk::functor<parser<It, V>>::fmap (f, p);
+        using U = typename fnk::type_support::function_traits<F>::return_type;
+        return parser<It, U, R>
+        {
+            .description =
+                "[" + 
+                p.description + 
+                " //fmap// " + 
+                fnk::utility::format_function_type<F>() + 
+                "]",
+            .parse =
+            [=](typename rpc::core::parser<It, U, R>::accumulator_type & acc)
+            {
+                typename parser<It, V, R>::accumulator_type mock
+                    { empty<V>{}, torange (acc) };
+ 
+                auto res (p.parse (mock));
+                if (parse_success (res)) {
+                    acc.insert
+                        (fnk::eval (f, toresult_value (res)), torange (res));
+                    return acc;
+                }
+                else {
+                    acc.insert
+                        (failure {toresult_failure (mock)}, torange (mock));
+                    return acc;
+                }
+            }
+        };
     }
 
     //
     // Lift a parser to a new value type using an existing type conversion,
     // then fold over the results to a reduced final parse value.
     //
-    template <typename U, typename It, typename V,
-        typename = std::enable_if_t<fnk::monoid<U>::is_monoid_instance::value>>
-    inline decltype(auto) liftreduce (parser<It, V> const& p)
+    template <typename U, typename It, typename V, typename R>
+    inline decltype(auto) liftreduce (parser<It, V, R> const& p)
     {
-        return reduce (lift<U>(p));
+        return reduce (lift<U> (p));
     }
 
     //
     // Lift a parser to a new value type using an explicitly provided function,
     // then fold over the results to reduce to a final parse value.
     //
-    template <typename F, typename B, typename It, typename V,
-        typename = std::enable_if_t
-            <fnk::monoid<typename fnk::type_support::function_traits<F>::return_type>::is_monoid_instance::value>>
-    inline decltype(auto) liftreduce (parser<It, V> const& p, F && f)
+    template <typename It, typename V, typename R, typename F>
+    inline decltype(auto) liftreduce (parser<It, V, R> const& p, F && f)
     {
         return reduce (lift (p, f));
+    }
+ 
+    //
+    // Lift a parser to a new value type using an existing type convertion,
+    // then foldl over the results using the second provided function to reduce
+    // to a final parse value.
+    //
+    template
+    <typename U, typename G, typename B, typename It, typename V, typename R>
+    inline decltype(auto) liftreducel
+        (parser<It, V, R> const& p, G && g, B && b)
+    {
+        return reducel (lift<U> (p), g, b);
+    }
+    
+    //
+    // Lift a parser to a new value type using an existing type convertion,
+    // then foldr over the results using the second provided function to reduce
+    // to a final parse value.
+    //
+    template
+    <typename U, typename G, typename B, typename It, typename V, typename R>
+    inline decltype(auto) liftreducer
+        (parser<It, V, R> const& p, G && g, B && b)
+    {
+        return reducer (lift<U> (p), g, b);
+    }
+ 
+    //
+    // Lift a parser to a new value type using an explicitly provided function,
+    // then foldl over the results using the second provided function to reduce
+    // to a final parse value.
+    //
+    template
+    <typename F, typename G, typename B, typename It, typename V, typename R>
+    inline decltype(auto) liftreducel
+        (parser<It, V, R> const& p, F && f, G && g, B && b)
+    {
+        return reducel (lift (p, f), g, b);
     }
     
     //
     // Lift a parser to a new value type using an explicitly provided function,
-    // then foldr over the results using the second provided function to reduce to a final parse value.
+    // then foldr over the results using the second provided function to reduce
+    // to a final parse value.
     //
-    template <typename F, typename G, typename B, typename It, typename V,
-        typename = std::enable_if_t
-            <fnk::monoid<typename fnk::type_support::function_traits<F>::return_type>::is_monoid_instance::value>>
-    inline decltype(auto) liftreduce (parser<It, V> const& p, F && f, G && g, B && b)
+    template
+    <typename F, typename G, typename B, typename It, typename V, typename R>
+    inline decltype(auto) liftreducer
+        (parser<It, V, R> const& p, F && f, G && g, B && b)
     {
-        return reduce (lift (p, f), g, b);
+        return reducer (lift (p, f), g, b);
     }
 
     //
     // Inject a specified value in the place of a successful result value,
     // otherwise fail normally.
     //
-    template <typename W, typename It, typename V>
-    inline decltype(auto) inject (parser<It, V> const& p, W && w)
+    template <typename W, typename It, typename V, typename R>
+    inline decltype(auto) inject (parser<It, V, R> const& p, W && w)
     {
-        using R = typename parser<It, W>::result_type;
-        return parser<It, W>
+        return parser<It, W, R>
         {
-            .parse = [=](typename parser<It, W>::range_type const& r)
+            .parse = [=](typename parser<It, W, R>::accumulator_type & acc)
             {
-                auto l = fnk::eval (p.parse, r);
-                std::list<R> out;
-
-                auto iter = l.cbegin();
-                while (iter != l.cend() && parser<It, V>::is_result (*iter))
-                {
-                    out.emplace_back (w, parser<It, V>::result_range (*iter));
-                    ++iter;
+                typename parser<It, V, R>::accumulator_type mock
+                    { empty<V>{}, torange (acc) };
+                
+                auto res (p.parse (mock));
+                if (parse_success (res)) {
+                    acc.insert (w, torange (res));
+                    return acc;
+                } else {
+                    acc.insert
+                        (failure {toresult_failure (mock)}, torange (mock));
+                    return acc;
                 }
-                if (iter != l.cend())
-                    out.emplace_back (parser<It, V>::failure_message (iter));
-                return out;
             }
         };
     }
