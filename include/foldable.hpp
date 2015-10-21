@@ -77,7 +77,7 @@ namespace fnk
 
             auto b_ = std::forward<W>(b);
             for (auto const& e : std::forward<U>(c))
-                b_ = f (b_, e);
+                b_ = f (e, b_);
             return b_;
         }
 
