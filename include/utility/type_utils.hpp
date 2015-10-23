@@ -198,10 +198,11 @@ namespace utility
         static inline decltype(auto) demangle (char const * name)
         {
             int status = 0;
-            std::unique_ptr<char, void(*)(void*)> result
-                { abi::__cxa_demangle (name, NULL, NULL, &status), std::free };
-
-            return status == 0 ? result.get() : name;
+            auto preresult = abi::__cxa_demangle (name, NULL, NULL, &status);
+            std::string res (status == 0 ? preresult : name);
+        
+            std::free (preresult);
+            return res;
         }
 #else
         static inline decltype(auto) demangle (char const * name)
