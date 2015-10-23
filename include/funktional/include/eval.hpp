@@ -58,7 +58,7 @@ namespace fnk
             typename fnk::type_support::function_traits<decltype(f)>;
 
         // "+ 1" accounts for implicit "this" argument
-        static_assert (ftraits::arity == sizeof...(args),
+        static_assert (ftraits::arity == 1 + sizeof...(args),
                       "arity of function disagrees with parameter list length");
 
         return (c.*f) (std::forward<Args>(args)...);
