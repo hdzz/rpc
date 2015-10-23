@@ -122,7 +122,7 @@ namespace utility
             static constexpr bool value = decltype(test<F, Args...>(0)) {};
         };
     }
-    
+
     template <typename F, typename ... Args>
     struct is_well_formed : public std::conditional<detail::is_good_call<F, Args...>::value, std::true_type, std::false_type> {};
 

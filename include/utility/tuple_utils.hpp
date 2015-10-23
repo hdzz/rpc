@@ -203,17 +203,34 @@ namespace utility
 
 namespace detail
 {
-    template <class A, class ... As, std::size_t ... I>
-    static constexpr inline decltype(auto) tuple_tail_helper (std::tuple<A, As...> && a)
+    template <typename Tup, typename Seq>
+    struct tuple_tail_helper {};
+
+    template <typename Tup, std::size_t S0, std::size_t... Seq>
+    struct tuple_tail_helper<Tup, seq<S0, Seq...>>
     {
-        return std::make_tuple (std::get<I>(a)...);
+        using type = std::tuple<typename std::tuple_element<Seq, Tup>::type...>;
+    };
+
+    template <typename Tup>
+    struct tuple_tail
+        : tuple_tail_helper<Tup, seq_gen<std::tuple_size<Tup>::value>>
+    {};
+
+    template <typename Tup, std::size_t S0, std::size_t ... Seq>
+    static constexpr inline decltype(auto)
+    tuple_tailfn (Tup && t, seq<S0, Seq...>)
+    {
+        return std::make_tuple (std::get<Seq>(std::forward<Tup>(t))...); 
     }
 } // namespace detail
 
-    template <class A, class ... As>
-    static constexpr inline decltype(auto) tuple_tail (std::tuple<A, As...> && a)
+    template <typename Tup>
+    static constexpr inline decltype(auto) tuple_tail (Tup && t)
     {
-        return detail::tuple_tail_helper<A, As..., trunc_seq_gen<1, sizeof...(As)>> (a);
+        return detail::tuple_tailfn
+            (std::forward<Tup>(t),
+             typename seq_gen<std::tuple_size<Tup>::value>::type{}); 
     }
 
     template <class Tup>
