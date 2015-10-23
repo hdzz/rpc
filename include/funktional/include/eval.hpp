@@ -35,7 +35,7 @@ namespace fnk
     inline constexpr decltype(auto) eval (R(C::*f)() const, C const& c, Args&& ... args)
     {
         using ftraits = typename fnk::type_support::function_traits<decltype(f)>;
-        static_assert (ftraits::arity == sizeof...(args), "arity of function disagrees with parameter list length");
+        static_assert (ftraits::arity == 1 + sizeof...(args), "arity of function disagrees with parameter list length");
 
         return (c.*f) (std::forward<Args>(args)...);
     }
@@ -44,7 +44,7 @@ namespace fnk
     inline constexpr decltype(auto) eval (R(C::*f)() const, C & c, Args&& ... args)
     {
         using ftraits = typename fnk::type_support::function_traits<decltype(f)>;
-        static_assert (ftraits::arity == sizeof...(args), "arity of function disagrees with parameter list length");
+        static_assert (ftraits::arity == 1 + sizeof...(args), "arity of function disagrees with parameter list length");
 
         return (c.*f) (std::forward<Args>(args)...);
     }
