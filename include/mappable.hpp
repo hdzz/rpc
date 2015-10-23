@@ -45,8 +45,7 @@ namespace fnk
             typename = std::enable_if_t
                 <std::is_convertible
                     <typename fnk::type_support::function_traits<F>::return_type, R>::value>,
-            typename = std::enable_if_t<fnk::mappable<G>::is_mappable_instance::value>,
-            typename = std::enable_if_t<fnk::utility::is_well_formed<G(Args...)>::value>>
+            typename = std::enable_if_t<fnk::mappable<G>::is_mappable_instance::value>>
         static constexpr decltype(auto) map (F && f, G && g)
         {
             return [=] (Args ... args)
