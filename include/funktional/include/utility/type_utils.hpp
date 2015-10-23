@@ -76,15 +76,6 @@ namespace utility
         using type = seq<S...>;
     };
 
-    template <std::size_t T, std::size_t N, std::size_t ... S>
-    struct trunc_seq_gen : seq_gen <T, N-1, N-1, S...> {};
-
-    template <std::size_t T, std::size_t ... S>
-    struct trunc_seq_gen <T, S...>
-    {
-        using type = seq<S...>; 
-    };
-
     //
     // Type equality
     //
@@ -131,7 +122,7 @@ namespace utility
             static constexpr bool value = decltype(test<F, Args...>(0)) {};
         };
     }
-    
+
     template <typename F, typename ... Args>
     struct is_well_formed : public std::conditional<detail::is_good_call<F, Args...>::value, std::true_type, std::false_type> {};
 
