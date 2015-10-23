@@ -105,7 +105,8 @@ namespace utility
     
     template <template <typename ...> class Tmp, typename ... Ts>
     struct is_specialization<Tmp<Ts...> &&, Tmp> : std::true_type {};
-    
+ 
+/* words with clang++, but not g++ as of ver. 5.2.0
     namespace detail
     {
         template <typename F, typename ... Args>
@@ -125,7 +126,7 @@ namespace utility
 
     template <typename F, typename ... Args>
     struct is_well_formed : public std::conditional<detail::is_good_call<F, Args...>::value, std::true_type, std::false_type> {};
-
+*/
 
     template <class T>
     inline constexpr T&& forward_constexpr (T & t) noexcept { return static_cast<T&&> (t); }
