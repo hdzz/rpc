@@ -217,7 +217,11 @@ namespace detail
         static decltype(auto) names (void)
         {
             std::list<std::string> out;
-            for (auto const& e : { type_name<typename fnk::type_support::function_traits<F>::template argument<S>::type>::name()... })
+            auto l =
+                {type_name
+                    <typename fnk::type_support::function_traits<F>::template
+                        argument<S>::type>::name()... };
+            for (auto const& e : l)
                 out.push_back (e);
             return out;
         } 
@@ -232,18 +236,51 @@ namespace detail
         std::string out ("(");
         for (auto const& argname : detail::function_args<F, N-1>::names())
                 out.append (argname + " -> ");
-        out.append (type_name<typename type_support::function_traits<F>::return_type>::name());   
+        out.append
+            (type_name<typename type_support::function_traits<F>::return_type>
+                ::name());
         out.append (")");
         return out;
+    }
+
+    template <typename T>
+    static inline std::string to_string (T const&);
+
+    template <typename T>
+    std::stringstream& operator<< (std::stringstream& os, std::list<T> const& l)
+    {
+        std::string s ("("); 
+        auto last = std::prev (l.cend());
+        auto it = l.cbegin();
+        for (; it != last; ++it) {
+            s += to_string(*it);
+            s += ")";
+        }
+        s += to_string(*it);
+        s += ")";
+        os << s;
+        return os;
+    }
+
+    template <typename T>
+    std::ostream& operator<< (std::ostream& os, std::list<T> const& l)
+    {
+        std::stringstream s ("("); 
+        auto last = std::prev (l.cend());
+        auto it = l.cbegin();
+        for (; it != last; ++it)
+            s << *it << ", ";
+        s << *it << ")";
+        return os << s.str ();
     }
 
     //
     // Works so long as T can be printed using operator<<
     //
     template <typename T>
-    static inline std::string to_string (T const& t)
+    static std::string to_string (T const& t)
     {
-        std::stringstream s;            
+        std::stringstream s;
         s << t;
         return s.str();
     }
@@ -251,4 +288,3 @@ namespace detail
 } // naemspace fnk
 
 #endif // ifndef TYPE_UTILS_HPP
-
