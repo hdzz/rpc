@@ -246,12 +246,14 @@ namespace detail
     template <typename T>
     static inline std::string to_string (T const&);
 
-    template <typename T>
-    std::stringstream& operator<< (std::stringstream& os, std::list<T> const& l)
+    template <template <typename...> class C, typename ... Args,
+        typename = std::enable_if_t
+            <not (is_specialization<C<Args...>, std::basic_string>::value)>>
+    std::stringstream& operator<< (std::stringstream& os, C<Args...> const& c)
     {
         std::string s ("("); 
-        auto last = std::prev (l.cend());
-        auto it = l.cbegin();
+        auto last = std::prev (c.cend());
+        auto it = c.cbegin();
         for (; it != last; ++it) {
             s += to_string(*it);
             s += ")";
@@ -260,18 +262,6 @@ namespace detail
         s += ")";
         os << s;
         return os;
-    }
-
-    template <typename T>
-    std::ostream& operator<< (std::ostream& os, std::list<T> const& l)
-    {
-        std::stringstream s ("("); 
-        auto last = std::prev (l.cend());
-        auto it = l.cbegin();
-        for (; it != last; ++it)
-            s << *it << ", ";
-        s << *it << ")";
-        return os << s.str ();
     }
 
     //
