@@ -22,8 +22,8 @@ reductions should be used to achieve this.
 - When possible, parsers should be composed using the `branch` methods for
 continuation passing style.
 
-### Why is Continuation Passing Style encouraged with the family of `branch`
-### methods? (tldr; incidental structure is bad)
+### Why is Continuation Passing Style encouraged with the family of branch \
+methods? (tldr; incidental structure is bad)
 
 Using CPS in a parser combinator framework, while initially more difficult with
 respect to syntactic constructs, provides an extremely convenient means of
@@ -42,14 +42,16 @@ faster and more space efficient code; see [Efficient Combinator Parsers]
 
 ## Why don't the parsers use the "list of success" method?
 
-Because incidental structure is bad.
+Because incidental structure is bad, and returning a list of successes
+requires writing unnecessary code to compose parsers. Moreover, it makes
+direct composition of parsers non-trivial to accomplish.
 
 ## Why cant' my parsers return a list of values?
 
 They can, just so long as that is the declared parser value; otherwise, see
 above.
 
-## Why is `std::deque` the default backing container for the `accumulator` type?
+## Why is std::deque the default backing container for the accumulator type?
 
 Because [linked lists are bad]
 (https://www.youtube.com/watch?v=YQs6IC-vgmo&ab_channel=AlessandroStamatto).
