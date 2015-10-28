@@ -24,18 +24,17 @@
 
 namespace rpc
 {
-namespace basic
+namespace core
 {
     template <typename It, typename V, typename R = core::range<It>>
-    auto const fail = core::parser<It, V, R>
+    parser<It, V, R> const fail = core::parser<It, V, R>
     {
         .description = "[failure]",
         .parse = []
             (gsl::not_null_ptr
                 <typename core::parser<It, V, R>::accumulator_type> const acc)
         {
-            using A = typename core::parser<It, V, R>::accumulator_type;
-            auto rng (core::torange<A> (acc));
+            auto rng (core::torange (*acc));
             acc->insert
                 (core::parse_result<V> {core::failure {"[failure]"}},
                  rng);
@@ -44,13 +43,13 @@ namespace basic
     };
 
     template <typename It, typename V, typename R = core::range<It>>
-    inline decltype(auto) failwith (std::string const& description)
+    inline parser<It, V, R> failwith (std::string const& description)
     {
         return core::override_description (fail<It, V, R>, description);
     }
     
     template <typename It, typename V, typename R = core::range<It>>
-    auto const pass = core::parser<It, V, R>
+    parser<It, V, R> const pass = core::parser<It, V, R>
     {
         .description = "[pass]",
         .parse = []
@@ -62,7 +61,7 @@ namespace basic
     };
  
     template <typename It, typename V, typename R = core::range<It>>
-    inline decltype(auto) unit (V const& v)
+    inline parser<It, V, R> unit (V const& v)
     {
         using U = std::decay_t<V>;
 
@@ -80,7 +79,7 @@ namespace basic
             .parse =
             [=](AccT const acc)
             {
-                auto rng (core::torange<A> (acc));
+                auto rng (core::torange (*acc));
                 acc->insert
                     (core::parse_result<U> {static_cast<U> (v)}, rng);
                 return acc;
@@ -89,17 +88,15 @@ namespace basic
     }
 
     template <typename It, typename V, typename R = core::range<It>>
-    auto item = core::parser<It, V, R>
+    parser<It, V, R> const item = core::parser<It, V, R>
     {
         .description = "[item :: " + fnk::utility::type_name<V>::name() + "]",
         .parse = []
             (gsl::not_null_ptr
                 <typename core::parser<It, V, R>::accumulator_type> const acc)
         {
-            using A = typename core::parser<It, V, R>::accumulator_type;
-            
-            if (acc->range_empty()) {
-                auto rng (core::torange<A> (acc));
+            if (acc->range_empty ()) {
+                auto rng (core::torange (*acc));
                 acc->insert
                     (core::failure {"expected [item :: " +
                                    fnk::utility::type_name<V>::name() +
@@ -107,10 +104,10 @@ namespace basic
                      rng);
                 return acc;
             } else {
-                auto rng (core::torange_tail<A> (acc));
+                auto rng (core::torange_tail (*acc));
                 acc->insert
                     (core::parse_result<V>
-                        {static_cast<V> (core::torange_head<A> (acc))},
+                        {static_cast<V> (core::torange_head (*acc))},
                      rng);
                 return acc;
             }
@@ -128,11 +125,11 @@ namespace basic
                 typename fnk::type_support::function_traits<Pr>
                     ::template argument<0>::type>
                 ::value>>
-    inline decltype(auto) satisfy (Pr && predicate, std::string const& dsc = "")
+    inline parser<It, T, R> satisfy (Pr && predicate, std::string const dsc)
     {
         using A = typename core::parser<It, T, R>::accumulator_type;
         using AccT = gsl::not_null_ptr<A>;
-        
+
         return core::parser<It, T, R>
         {
             .description = "['" + dsc + "']",
@@ -144,20 +141,18 @@ namespace basic
                         (core::failure {"expected [item :: " +
                                        fnk::utility::type_name<T>::name() +
                                        "]"},
-                        core::torange<A> (acc));
+                        core::torange (*acc));
                     return acc;
-                } else if (fnk::eval (predicate, core::torange_head<A> (acc))) {
+                } else if (fnk::eval (predicate, core::torange_head (*acc))) {
                     acc->insert
                         (core::parse_result<T>
-                            {static_cast<T> (core::torange_head<A> (acc))},
-                        core::torange_tail<A> (acc));
+                            {static_cast<T> (core::torange_head (*acc))},
+                        core::torange_tail (*acc));
                     return acc;
                 } else {
                     acc->insert
-                        (core::failure {"expected ['" +
-                                       dsc +
-                                       "']"},
-                        core::torange<A> (acc));
+                        (core::failure {"expected ['" + dsc + "']"},
+                        core::torange (*acc));
                     return acc;
                 }
             }
@@ -167,7 +162,7 @@ namespace basic
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
              typename R = core::range<It>>
-    inline decltype(auto) token (T && t)
+    inline parser<It, T, R> token (T && t)
     {
         auto pred ([t_ = std::forward<T>(t)] (T const& e) { return t_ == e; }); 
         return satisfy<It, T, R>
@@ -204,7 +199,7 @@ namespace detail
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
              typename R = core::range<It>>
-    inline decltype(auto) one_of (std::initializer_list<T> l)
+    inline parser<It, T, R> one_of (std::initializer_list<T> l)
     {
         // Waiting for std::initializer_list to have constexpr .size() method,
         // then we can remove std::vector and have a statically created
@@ -229,7 +224,7 @@ namespace detail
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
              typename R = core::range<It>>
-    inline decltype(auto) none_of (std::initializer_list<T> l)
+    inline parser<It, T, R> none_of (std::initializer_list<T> l)
     {
         // Waiting for std::initializer_list to have constexpr .size() method,
         // then we can remove std::vector and have a statically created
@@ -253,12 +248,8 @@ namespace detail
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>,
-             typename =
-                std::enable_if_t
-                    <fnk::utility::is_well_formed
-                        <decltype(T::operator<=), T const&, T const&>::value>>
-    inline decltype(auto) in_range (T const& start, T const& end)
+             typename R = core::range<It>>
+    inline parser<It, T, R> in_range (T const& start, T const& end)
     {
         auto pred ([=](T const& t) { return start <= t && t <= end; });
         return satisfy<It, T, R>
@@ -270,7 +261,7 @@ namespace detail
              + "] :: "
              + fnk::utility::type_name<T>::name());
     }
-} // namespace basic
+} // namespace core
 } // namespace rpc
 
 #endif // ifndef TOKEN_PARSERS_HPP

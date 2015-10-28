@@ -10,28 +10,30 @@
 #define PARSER_HPP
 
 #include <algorithm>
-#include <type_traits>
 #include <functional>
+#include <type_traits>
 
 #include "accumulator.hpp"
 #include "range.hpp"
 #include "result_type.hpp"
 
-#include "funktional/include/algebraic.hpp"
-#include "funktional/include/concat.hpp"
-#include "funktional/include/filterable.hpp"
-#include "funktional/include/mappable.hpp"
+#include "../funktional/include/algebraic.hpp"
+#include "../funktional/include/concat.hpp"
+#include "../funktional/include/filterable.hpp"
+#include "../funktional/include/mappable.hpp"
 
-#include "funktional/include/alternative.hpp"
-#include "funktional/include/functor.hpp"
-#include "funktional/include/applicative_functor.hpp"
-#include "funktional/include/monad.hpp"
-#include "funktional/include/additive_monad.hpp"
-#include "funktional/include/monoid.hpp"
+#include "../funktional/include/alternative.hpp"
+#include "../funktional/include/functor.hpp"
+#include "../funktional/include/applicative_functor.hpp"
+#include "../funktional/include/monad.hpp"
+#include "../funktional/include/additive_monad.hpp"
+#include "../funktional/include/monoid.hpp"
 
-#include "funktional/include/type_support/container_traits.hpp"
-#include "funktional/include/type_support/function_traits.hpp"
-#include "funktional/include/utility/type_utils.hpp"
+#include "../funktional/include/type_support/container_traits.hpp"
+#include "../funktional/include/type_support/function_traits.hpp"
+#include "../funktional/include/utility/type_utils.hpp"
+
+#include "../gsl/not_null.hpp"
 
 namespace rpc
 {
@@ -61,8 +63,13 @@ namespace core
         template <typename I, typename U, typename S = range<I>>
         using rebind = parser<I, U, S>;
 
+        parser  (void) = delete;
+        ~parser (void) = default;
+
         std::string const description;
-        std::function<accumulator_type & (accumulator_type &)> const parse;
+        std::function
+            <gsl::not_null_ptr<accumulator_type> const
+            (gsl::not_null_ptr<accumulator_type> const)> const parse;
     };
 
     template <typename T>
@@ -106,100 +113,165 @@ namespace core
         template <typename I, typename U, typename R = range<I>>
         using rebind = typename std::decay_t<P>::template rebind<I, U, R>;
     };
-    
+
     template <typename It, typename V, typename R>
-    inline decltype(auto) override_description
-        (parser<It, V, R> const& p, std::string const& new_description)
+    inline parser<It, V, R>
+    override_description (parser<It, V, R> const& p, std::string const& new_des)
     {
         return parser<It, V, R>
         {
-            .description = new_description,
+            .description = new_des,
             .parse = p.parse
         };
     }
 
     template <typename It, typename V, typename R>
-    inline decltype(auto) parse
-        (parser<It, V, R> const& p,
-         typename parser<It, V, R>::range_type const& r)
+    inline typename parser<It, V, R>::accumulator_type parse
+        (parser<It,V,R> const& p, typename parser<It,V,R>::range_type const& r)
     {
-        typename parser<It, V, R>::accumulator_type acc {empty<V>{}, r};
-        auto stat (p.parse (acc));
-        return std::make_pair (stat, acc);
+        using A = typename parser<It, V, R>::accumulator_type;
+ 
+        A acc {empty<V>{}, r};
+        (void) p.parse (gsl::not_null_ptr<A> {&acc});
+        return acc;
     }
 
     template <typename A>
-    inline bool parse_success (A const& acc, std::size_t const n = 0)
+    static inline bool parse_success (A const& acc)
     {
-        return is_success (acc.result (n));
+        return acc.result ().is_success ();
     }
- 
+
+    template <typename V, typename R>
+    static inline bool parse_success (std::pair<parse_result<V>, R> const& p)
+    {
+        return p.first.is_success ();
+    }
+
     template <typename A>
-    inline decltype(auto) torange (A const& acc, std::size_t const n = 0)
+    static inline bool parse_failure (A const& acc)
+    {
+        return not acc.result ().is_success ();
+    }
+
+    template <typename V, typename R>
+    static inline bool parse_failure (std::pair<parse_result<V>, R> const& p)
+    {
+        return not p.first.is_success ();
+    }
+
+    template <typename A>
+    inline auto torange (A const& acc, std::size_t const n = 0)
+        -> decltype(acc.range(n))
     {
         return acc.range (n);
     }
-    
+ 
+    template <typename V, typename R>
+    inline R torange (std::pair<parse_result<V>, R> const& p)
+    {
+        return p.second;
+    }
+ 
     template <typename A>
-    inline decltype(auto) torange_head (A const& acc, std::size_t const n = 0)
+    inline auto torange_head (A const& acc, std::size_t const n = 0)
+        -> decltype(acc.range(n).head())
     {
         return acc.range (n).head();
     }
  
+    template <typename V, typename R>
+    inline R torange_head (std::pair<parse_result<V>, R> const& p)
+    {
+        return p.second.head ();
+    }
+ 
     template <typename A>
-    inline decltype(auto) torange_tail (A const& acc, std::size_t const n = 0)
+    inline auto torange_tail (A const& acc, std::size_t const n = 0)
+        -> decltype(acc.range_tail (n))
     {
         return acc.range_tail (n);
     }
  
+    template <typename V, typename R>
+    inline R torange_tail (std::pair<parse_result<V>, R> const& p)
+    {
+        return p.second.tail ();
+    }
+ 
     template <typename A>
-    inline decltype(auto) toresult (A const& acc, std::size_t const n = 0)
+    inline auto toresult (A const& acc, std::size_t const n = 0)
+        -> decltype(acc.result(n))
     {
         return acc.result (n);
     }
-    
-    template <typename A>
-    inline decltype(auto) toresult_value (A const& acc, std::size_t const n = 0)
-    {
-        return result_value (acc.result (n));
-    }
-    
-    template <typename A>
-    inline decltype(auto) toresult_failure (A const& acc, std::size_t const n = 0)
-    {
-        return result_failure (acc.result (n));
-    }
-/* 
-    template <typename V, typename A>
-    inline decltype(auto) values (A const& acc, std::size_t const n = 0)
-    {
-        using ResT = typename accumulator_traits<A>::result_type;
-        using RngT = typename accumulator_traits<A>::range_type;
 
-        auto vs (fnk::map<decltype(result_value<V>)>
-            (result_value<V>,
-             fnk::filter<decltype(is_value<V>)>
-                (is_value<V>,
-                 fnk::map
-                    ([](std::pair<ResT, RngT> const& r) { return r.first; }, acc.data ()))));
-        std::reverse (vs.begin(), vs.end());
-        return vs;
-    }
-    
-    template <typename V, typename A>
-    inline decltype(auto) values (std::pair<status, A> const& pres)
+    template <typename V, typename R>
+    inline parse_result<V> toresult (std::pair<parse_result<V>, R> const& p)
     {
-        using ResT = typename accumulator_traits<A>::result_type;
-        using RngT = typename accumulator_traits<A>::range_type;
-       
-        return fnk::map<decltype(result_value<V>)>
-            (result_value<V>,
-             fnk::filter<decltype(is_value<V>)>
-                (is_value<V>,
-                 fnk::map
-                    ([](std::pair<ResT, RngT> const& r) { return r.first; }, pres.second.data ())));
+        return p.first;
     }
-    */
+
+    template <typename A>
+    inline auto toresult_value (A const& acc, std::size_t const n = 0)
+        -> decltype(acc.result(n).to_value())
+    {
+        return acc.result (n).to_value ();
+    }
+
+    template <typename V, typename R>
+    inline auto toresult_value (std::pair<parse_result<V>, R> const& p)
+        -> decltype(p.first.to_value())
+    {
+        return p.first.to_value ();
+    }
+ 
+    template <typename A>
+    inline auto toresult_range (A const& acc, std::size_t const n = 0)
+        -> decltype(acc.result(n).second)
+    {
+        return acc.result (n).second;
+    }
+
+    template <typename V, typename R>
+    inline R toresult_range (std::pair<parse_result<V>, R> const& p)
+    {
+        return p.second;
+    }
+ 
+    template <typename A>
+    inline failure toresult_failure
+        (A const& acc, std::size_t const n = 0)
+    {
+        return acc.result (n).to_failure ();
+    }
+
+    template <typename V, typename R>
+    inline failure toresult_failure
+        (std::pair<parse_result<V>, R> const& p)
+    {
+        return p.first.to_failure();
+    }
+
+    template <typename A>
+    inline std::string toresult_failure_message
+        (A const& acc, std::size_t const n = 0)
+    {
+        return acc.result (n).to_failure_message ();
+    }
+
+    template <typename V, typename R>
+    inline std::string toresult_failure_message
+        (std::pair<parse_result<V>, R> const& p)
+    {
+        return p.first.to_failure_message ();
+    }
+
+    template <typename A>
+    inline auto values (A const& acc) -> decltype(acc.values())
+    {
+        return acc.values ();
+    }
 } // namespace core
 } // namespace rpc
 
@@ -433,4 +505,3 @@ namespace fnk
 } // namespace fnk
 
 #endif // ifndef PARSER_HPP
-

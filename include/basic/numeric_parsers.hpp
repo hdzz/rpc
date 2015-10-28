@@ -15,8 +15,8 @@
 
 #include "core/parser.hpp"
 #include "core/combinators.hpp"
+#include "core/token_parsers.hpp"
 
-#include "atom_parsers.hpp"
 #include "text_parsers.hpp"
 
 #include "funktional/include/eval.hpp"
@@ -31,22 +31,23 @@ namespace detail
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    auto natural_str =
+    core::parser<It, std::basic_string<T>, R> natural_str =
         core::override_description
-            (core::reducer
-                (digits<It, T, R>, 
-                 [](std::basic_string<T>&s, T c) { s.push_back (c); return s; },
-                 std::basic_string<T>()),
+            (core::reducel
+                (basic::digits<It, T, R>,
+                [](T c, std::basic_string<T> & s)
+                    { s.push_back (c); return s; },
+                std::basic_string<T>()),
             "[natural]");
 
 
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    rpc::core::parser<It, std::basic_string<T>, R> plus_natural_str =
-        rpc::core::override_description
-            (rpc::core::ignorel
-                (token<It, T, R> ('+'),
+    core::parser<It, std::basic_string<T>, R> plus_natural_str =
+        core::override_description
+            (core::ignorel
+                (core::token<It, T, R> ('+'),
                 natural_str<It, T, R>),
             "[(+) natural]");
 
@@ -54,13 +55,13 @@ namespace detail
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    rpc::core::parser<It, std::basic_string<T>, R> minus_natural_str = 
-        rpc::core::override_description
-            (rpc::core::reduce
-                (rpc::core::sequence
-                    (rpc::core::lift
-                        (character<It, T, R>('-'),
-                         [](T c) { return std::basic_string<T>(1, c); }),
+    core::parser<It, std::basic_string<T>, R> minus_natural_str = 
+        core::override_description
+            (core::reduce
+                (core::sequence
+                    (core::inject
+                        (basic::character<It, T, R> ('-'),
+                         std::basic_string<T> (1, '-')),
                     natural_str<It, T, R>)),
             "[(-) natural]");
 
@@ -68,13 +69,13 @@ namespace detail
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    rpc::core::parser<It, std::basic_string<T>, R> decimal_str =
-        rpc::core::override_description
-            (rpc::core::reduce
-                (rpc::core::sequence
-                    (rpc::core::lift
-                        (character<It, T, R>('.'),
-                        [](T c) { return std::basic_string<T>(1, c); }),
+    core::parser<It, std::basic_string<T>, R> decimal_str =
+        core::override_description
+            (core::reduce
+                (core::sequence
+                    (core::inject
+                        (basic::character<It, T, R>('.'),
+                         std::basic_string<T> (1, '.')),
                     natural_str<It, T, R>)),
             "[decimal]");
 
@@ -83,7 +84,7 @@ namespace detail
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
     auto number_str =
-        rpc::core::option
+        core::option
             (natural_str<It, T, R>,
             minus_natural_str<It, T, R>,
             plus_natural_str<It, T, R>);
@@ -92,13 +93,13 @@ namespace detail
      template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>  
-    rpc::core::parser<It, std::basic_string<T>, R> exponent_str =
-        rpc::core::override_description
-            (rpc::core::reduce
-                (rpc::core::sequence
-                    (rpc::core::lift
-                        (one_of<It, T, R>({'e','E'}),
-                        [](T c) { return std::basic_string<T>(1, c); }),
+    core::parser<It, std::basic_string<T>, R> exponent_str =
+        core::override_description
+            (core::reduce
+                (core::sequence
+                    (core::inject
+                        (core::one_of<It, T, R>({'e','E'}),
+                         std::basic_string<T>(1, 'e')),
                     number_str<It, T, R>)),
             "[exponent]");
 
@@ -106,201 +107,172 @@ namespace detail
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    rpc::core::parser<It, std::basic_string<T>, R> floating_str =
-        rpc::core::override_description
-            (rpc::core::reduce
-                (rpc::core::sequence
+    core::parser<It, std::basic_string<T>, R> floating_str =
+        core::override_description
+            (core::reduce
+                (core::sequence
                     (number_str<It, T, R>,
-                    rpc::core::optional (decimal_str<It, T, R>, ""),
-                    rpc::core::optional (exponent_str<It, T, R>, ""))),
+                    core::optional (decimal_str<It, T, R>,
+                                        std::basic_string<T> ()),
+                    core::optional (exponent_str<It, T, R>,
+                                        std::basic_string<T> ()))),
             "[(+/-) float]");
 } // namespace detail
 
     template <typename It,
         typename T = typename std::iterator_traits<It>::value_type,
         typename R = core::range<It>,
-        typename IntT = unsigned int, int base = 0>
-    auto todigit =
-        rpc::core::override_description
-            (rpc::core::lift
+        typename IntT = unsigned int>
+    core::parser<It, IntT, R> todigit =
+        core::override_description
+            (core::lift
                 (basic::digit<It, T, R>,
-                [](T c) -> IntT { return c - '0'; }),
+                [](T c) -> IntT { return static_cast<IntT> (c - '0'); }),
             "[digit]"); 
 
 
     template <typename It,
         typename T = typename std::iterator_traits<It>::value_type,
         typename R = core::range<It>,
-        typename IntT = unsigned int, int base = 0>
-    auto todigits =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, todigit<It, T, R, IntT, base>));
+        typename IntT = unsigned int>
+    core::parser<It, IntT, R> todigits = core::some (todigit<It, T, R, IntT>);
 
 
     template <typename It,
         typename T = typename std::iterator_traits<It>::value_type,
         typename R = core::range<It>,
-        typename IntT = unsigned int, int base = 0>   
-    auto todigitm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, todigit<It, T, R, IntT, base>));
+        typename IntT = unsigned int>
+    core::parser<It, IntT, R> todigitm = core::many (todigit<It, T, R, IntT>);
 
 
     template <typename It,
         typename T = typename std::iterator_traits<It>::value_type,
         typename R = core::range<It>,
-        typename IntT = unsigned int, int base = 0>    
-    auto towdigit =
-        rpc::core::override_description
-            (rpc::core::lift
+        typename IntT = unsigned int>
+    core::parser<It, IntT, R> towdigit =
+        core::override_description
+            (core::lift
                 (basic::wdigit<It, T, R>,
-                [](T c) -> IntT { return c - '0'; }),
+                [](T c) -> IntT { return static_cast<IntT> (c - '0'); }),
             "[wide digit]");
 
 
     template <typename It,
         typename T = typename std::iterator_traits<It>::value_type,
         typename R = core::range<It>,
-        typename IntT = unsigned int, int base = 0>   
-    auto towdigits =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, towdigit<It, T, R, IntT, base>));
+        typename IntT = unsigned int>
+    core::parser<It, IntT, R> towdigits = core::some (towdigit<It, T, R, IntT>);
 
 
     template <typename It,
         typename T = typename std::iterator_traits<It>::value_type,
         typename R = core::range<It>,
-        typename IntT = unsigned int, int base = 0>
-    auto towdigitm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, towdigit<It, T, R, IntT, base>));
+        typename IntT = unsigned int>
+    core::parser<It, IntT, R> towdigitm = core::many (towdigit<It, T, R, IntT>);
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto natural = rpc::core::override_description
-        (rpc::core::lift
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, unsigned long, R> natural = core::override_description
+        (core::lift
             (detail::natural_str<It, T, R>,
             [](std::basic_string<T> const& s) -> unsigned long
-                { return std::stoul(s, nullptr, base); }),
+                { return std::stoul (s, nullptr, base); }),
         "[nautral]");
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto naturals =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, natural<It, T, R, base>));
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, unsigned long, R> naturals =
+        core::some (natural<It, T, R, base>);
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto naturalm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, natural<It, T, R, base>));
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, unsigned long, R> naturalm = 
+        core::many (natural<It, T, R, base>);
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto lnatural = rpc::core::override_description
-        (rpc::core::lift
-            (detail::natural_str<It, T, R>,
-            [](std::basic_string<T> const& s) -> unsigned long long
-                { return std::stoull(s,nullptr,base); }),
-        "[long natural]");
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, unsigned long long, R> lnatural =
+        core::override_description
+            (core::lift
+                (detail::natural_str<It, T, R>,
+                [](std::basic_string<T> const& s) -> unsigned long long
+                    { return std::stoull (s, nullptr, base); }),
+            "[long natural]");
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto lnaturals =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, lnatural<It, T, R, base>));
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, unsigned long long, R> lnaturals =
+        core::some (lnatural<It, T, R, base>);
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto lnaturalm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, lnatural<It, T, R, base>));
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, unsigned long long, R> lnaturalm =
+        core::many (lnatural<It, T, R, base>);
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto integer = rpc::core::override_description
-        (rpc::core::lift
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, int, R> integer = core::override_description
+        (core::lift
             (detail::number_str<It, T, R>,
             [](std::basic_string<T> const& s) -> int
-                { return std::stoi(s, nullptr, base); }),
+                { return std::stoi (s, nullptr, base); }),
         "[integer]");
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto integers =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, integer<It, T, R, base>));
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, int, R> integers = core::some (integer<It, T, R, base>);
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto integerm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, integer<It, T, R, base>));
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, int, R> integerm = core::many (integer<It, T, R, base>);
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto linteger = rpc::core::override_description
-        (rpc::core::lift
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, long, R> linteger = core::override_description
+        (core::lift
             (detail::number_str<It, T, R>,
             [](std::basic_string<T> const& s) -> long
-                { return std::stol(s, nullptr, base); }),
+                { return std::stol (s, nullptr, base); }),
         "[long integer]");
  
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0> 
-    auto lintegers =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, linteger<It, T, R, base>));
+             typename R = core::range<It>, int base = 10> 
+    core::parser<It, long, R> lintegers = core::some (linteger<It, T, R, base>);
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto lintegerm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, linteger<It, T, R, base>));
- 
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, long, R> lintegerm = core::many (linteger<It, T, R, base>);
+
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>   
-    auto llinteger = rpc::core::override_description
-        (rpc::core::lift
+             typename R = core::range<It>, int base = 10>   
+    core::parser<It, long long, R> llinteger = core::override_description
+        (core::lift
             (detail::number_str<It, T, R>,
             [](std::basic_string<T> const& s) -> long long
                 { return std::stoll(s, nullptr, base); }),
@@ -309,27 +281,23 @@ namespace detail
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto llintegers =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, llinteger<It, T, R, base>));
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, long long, R> llintegers =
+        core::some (llinteger<It, T, R, base>);
 
 
     template <typename It,
              typename T = typename std::iterator_traits<It>::value_type,
-             typename R = core::range<It>, int base = 0>
-    auto llintegerm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, llinteger<It, T, R, base>));
+             typename R = core::range<It>, int base = 10>
+    core::parser<It, long long, R> llintegerm =
+        core::many (llinteger<It, T, R, base>);
 
 
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    auto floating = rpc::core::override_description
-        (rpc::core::lift
+    core::parser<It, float, R> floating = core::override_description
+        (core::lift
             (detail::floating_str<It, T, R>,
             [](std::basic_string<T> const& s) -> float
                 { return std::stof(s, nullptr); }),
@@ -339,26 +307,20 @@ namespace detail
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    auto floatings =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, floating<It, T, R>));
+    core::parser<It, float, R> floatings = core::some (floating<It, T, R>);
 
 
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>   
-    auto floatingm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, floating<It, T, R>));
+    core::parser<It, float, R> floatingm = core::many (floating<It, T, R>);
 
 
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>   
-    auto lfloating = rpc::core::override_description
-        (rpc::core::lift
+    core::parser<It, double, R> lfloating = core::override_description
+        (core::lift
             (detail::floating_str<It, T, R>,
             [](std::basic_string<T> const& s) -> double
                 { return std::stod(s, nullptr); }),
@@ -368,26 +330,20 @@ namespace detail
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    auto lfloatings =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, lfloating<It, T, R>));
+    core::parser<It, double, R> lfloatings = core::some (lfloating<It, T, R>);
  
 
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>   
-    auto lfloatingm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, lfloating<It, T, R>));
+    core::parser<It, double, R> lfloatingm = core::many (lfloating<It, T, R>);
  
 
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>   
-    auto llfloating = rpc::core::override_description
-        (rpc::core::lift
+    core::parser<It, long double, R> llfloating = core::override_description
+        (core::lift
             (detail::floating_str<It, T, R>,
             [](std::basic_string<T> const& s) -> long double
                 { return std::stold(s, nullptr); }),
@@ -397,19 +353,15 @@ namespace detail
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    auto llfloatings =
-        rpc::core::some
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, llfloating<It, T, R>));
+    core::parser<It, long double, R> llfloatings =
+        core::some (llfloating<It, T, R>);
  
 
     template <typename It,
               typename T = typename std::iterator_traits<It>::value_type,
               typename R = core::range<It>>
-    auto llfloatingm =
-        rpc::core::many
-            (rpc::core::ignorel
-                (rpc::basic::spacem<It, T, R>, llfloating<It, T, R>));
+    core::parser<It, long double, R> llfloatingm =
+        core::many (llfloating<It, T, R>);
 } // namespace basic
 } // namespace rpc 
 
