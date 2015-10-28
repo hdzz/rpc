@@ -22,7 +22,7 @@ reductions should be used to achieve this.
 - When possible, parsers should be composed using the `branch` methods for
 continuation passing style.
 
-### Why is Continuation Passing Style encouraged with the family of branch \
+## Why is Continuation Passing Style encouraged with the family of branch \
 methods? (tldr; incidental structure is bad)
 
 Using CPS in a parser combinator framework, while initially more difficult with
@@ -46,7 +46,7 @@ Because incidental structure is bad, and returning a list of successes
 requires writing unnecessary code to compose parsers. Moreover, it makes
 direct composition of parsers non-trivial to accomplish.
 
-## Why cant' my parsers return a list of values?
+## Why can't my parsers return a list of values?
 
 They can, just so long as that is the declared parser value; otherwise, see
 above.
